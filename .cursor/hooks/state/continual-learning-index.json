@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "lastUpdated": 1781963916,
+  "transcripts": {
+    "c17eea5c-d7bc-4973-a370-5d8fbe90988d/c17eea5c-d7bc-4973-a370-5d8fbe90988d.jsonl": {
+      "mtime": 1781963909,
+      "size": 1790534
+    },
+    "c17eea5c-d7bc-4973-a370-5d8fbe90988d/subagents/d3fe195f-225e-47d4-943b-84aa21d3006c.jsonl": {
+      "mtime": 1781963916,
+      "size": 4514
+    },
+    "c17eea5c-d7bc-4973-a370-5d8fbe90988d/subagents/c7699e05-314b-4623-8d69-de445859c43c.jsonl": {
+      "mtime": 1781951719,
+      "size": 20854
+    },
+    "c17eea5c-d7bc-4973-a370-5d8fbe90988d/subagents/20e599f1-ab8c-401d-9a6f-aab00d0f3cf7.jsonl": {
+      "mtime": 1781951702,
+      "size": 19466
+    },
+    "c17eea5c-d7bc-4973-a370-5d8fbe90988d/subagents/3ca9df7c-7083-462f-9716-673478df8783.jsonl": {
+      "mtime": 1781767612,
+      "size": 21458
+    }
+  }
+}

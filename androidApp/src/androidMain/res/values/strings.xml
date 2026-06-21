@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">RawTracker</string>
+    <string name="widget_action_label">Log food</string>
+    <string name="widget_tracker_label">RawTracker macros</string>
+    <string name="camera_widget_desc">Quick photo capture for RawTracker</string>
+    <string name="progress_widget_desc">Today\'s macros + water quick-add</string>
+</resources>

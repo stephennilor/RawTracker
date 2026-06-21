@@ -1,0 +1,5 @@
+CREATE TABLE water (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  milliliters INTEGER NOT NULL,
+  logged_at INTEGER NOT NULL
+);

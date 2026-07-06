@@ -8,6 +8,48 @@ private func displayFont(_ size: CGFloat) -> Font { .custom("Fredoka-Bold", size
 private func monoFont(_ size: CGFloat) -> Font { .custom("JetBrainsMonoRoman-Bold", size: size) }
 private func monoRegularFont(_ size: CGFloat) -> Font { .custom("JetBrainsMonoRoman-Regular", size: size) }
 
+private struct WidgetText {
+    let today: String
+    let protein: String
+    let carbs: String
+    let fat: String
+    let food: String
+    let water: String
+    let progressName: String
+    let progressDescription: String
+    let cameraName: String
+    let cameraDescription: String
+}
+
+private var widgetText: WidgetText {
+    if Locale.current.languageCode == "pl" {
+        return WidgetText(
+            today: "DZIŚ",
+            protein: "B",
+            carbs: "W",
+            fat: "T",
+            food: "JEDZ",
+            water: "H\u{2082}O",
+            progressName: "Dzisiejsze makro",
+            progressDescription: "Kalorie, białko, węgle, tłuszcz + szybki zapis.",
+            cameraName: "Szybkie zdjęcie",
+            cameraDescription: "Dotknij, aby sfotografować posiłek."
+        )
+    }
+    return WidgetText(
+        today: "TODAY",
+        protein: "P",
+        carbs: "C",
+        fat: "F",
+        food: "FOOD",
+        water: "H\u{2082}O",
+        progressName: "Today's Macros",
+        progressDescription: "Calories, protein, carbs, fat + quick log.",
+        cameraName: "Quick Capture",
+        cameraDescription: "Tap to photograph a meal."
+    )
+}
+
 struct MacroEntry: TimelineEntry {
     let date: Date
     let cal: Int
@@ -59,10 +101,11 @@ struct Provider: TimelineProvider {
 
 struct ProgressWidgetView: View {
     var entry: MacroEntry
+    private let text = widgetText
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("TODAY")
+            Text(text.today)
                 .font(monoFont(12)).foregroundColor(ink)
             Text("\(entry.cal)")
                 .font(displayFont(34)).foregroundColor(ink)
@@ -72,9 +115,9 @@ struct ProgressWidgetView: View {
             }
             if entry.showMacros {
                 HStack(spacing: 10) {
-                    Text("P\(entry.protein)").macro()
-                    Text("C\(entry.carbs)").macro()
-                    Text("F\(entry.fat)").macro()
+                    Text("\(text.protein)\(entry.protein)").macro()
+                    Text("\(text.carbs)\(entry.carbs)").macro()
+                    Text("\(text.fat)\(entry.fat)").macro()
                 }
             }
             Spacer(minLength: 4)
@@ -82,7 +125,7 @@ struct ProgressWidgetView: View {
                 HStack(spacing: 8) {
                     if entry.showFood {
                         Link(destination: URL(string: "rawtracker://capture")!) {
-                            Text("+ FOOD")
+                            Text("+ \(text.food)")
                                 .font(monoFont(12))
                                 .foregroundColor(canvas)
                                 .frame(maxWidth: .infinity)
@@ -93,7 +136,7 @@ struct ProgressWidgetView: View {
                     }
                     if entry.showWater {
                         Link(destination: URL(string: "rawtracker://water")!) {
-                            Text("+ H\u{2082}O")  // subscript two, matching the Android widget
+                            Text("+ \(text.water)")
                                 .font(monoFont(12))
                                 .foregroundColor(ink)
                                 .frame(maxWidth: .infinity)
@@ -138,8 +181,8 @@ struct ProgressWidget: Widget {
                 ProgressWidgetView(entry: entry).padding(14).background(canvas)
             }
         }
-        .configurationDisplayName("Today's Macros")
-        .description("Calories, protein, carbs, fat + quick log.")
+        .configurationDisplayName(widgetText.progressName)
+        .description(widgetText.progressDescription)
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -153,8 +196,8 @@ struct CameraWidget: Widget {
                 CameraWidgetView()
             }
         }
-        .configurationDisplayName("Quick Capture")
-        .description("Tap to photograph a meal.")
+        .configurationDisplayName(widgetText.cameraName)
+        .description(widgetText.cameraDescription)
         .supportedFamilies([.systemSmall])
     }
 }

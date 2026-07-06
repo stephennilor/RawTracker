@@ -302,6 +302,7 @@ internal fun renderHeroValue(
     context: Context,
     value: Int,
     goal: Int,
+    kcalLabel: String,
     widthPx: Int,
     heightPx: Int,
     ink: Int,
@@ -341,7 +342,7 @@ internal fun renderHeroValue(
         if (useVerticalLabels) {
             drawVerticalStretchedText(
                 canvas = canvas,
-                text = "KCAL",
+                text = kcalLabel,
                 rect = RectF(pad, pad, pad + sideW, textBottom),
                 typeface = mono,
                 variationSettings = WidgetFont.Mono.variationSettings(),
@@ -360,7 +361,7 @@ internal fun renderHeroValue(
         } else {
             drawStretchedText(
                 canvas = canvas,
-                text = "KCAL",
+                text = kcalLabel,
                 rect = RectF(pad, pad, w * 0.40f, pad + headerH),
                 typeface = mono,
                 variationSettings = WidgetFont.Mono.variationSettings(),
@@ -384,7 +385,7 @@ internal fun renderHeroValue(
     } else {
         drawStretchedText(
             canvas = canvas,
-            text = "KCAL",
+            text = kcalLabel,
             rect = RectF(pad, textBottom - (h * 0.16f).coerceIn(10f, 28f), w - pad, textBottom),
             typeface = mono,
             variationSettings = WidgetFont.Mono.variationSettings(),
@@ -451,6 +452,7 @@ internal fun renderActionSticker(
     context: Context,
     water: Boolean,
     useIcon: Boolean,
+    label: String,
     widthPx: Int,
     heightPx: Int,
     canvasColor: Int,
@@ -488,7 +490,7 @@ internal fun renderActionSticker(
         }
         drawStretchedText(
             canvas = canvas,
-            text = if (water) "H\u2082O" else "FOOD",
+            text = label,
             rect = RectF(pad, pad * 0.6f, w - pad, h - pad * 0.6f),
             typeface = typeface,
             variationSettings = "'wght' 800",
@@ -509,6 +511,9 @@ internal fun renderMacroStrip(
     protein: Int,
     carbs: Int,
     fat: Int,
+    proteinLabel: String,
+    carbsLabel: String,
+    fatLabel: String,
     goalProtein: Int,
     goalCarbs: Int,
     goalFat: Int,
@@ -524,9 +529,9 @@ internal fun renderMacroStrip(
     val display = WidgetFont.Display.typeface(context)
     val mono = WidgetFont.Mono.typeface(context)
     val items = listOf(
-        Triple("P", protein, goalProtein),
-        Triple("C", carbs, goalCarbs),
-        Triple("F", fat, goalFat)
+        Triple(proteinLabel, protein, goalProtein),
+        Triple(carbsLabel, carbs, goalCarbs),
+        Triple(fatLabel, fat, goalFat)
     )
     val gap = (w * 0.035f).coerceIn(2f, 10f)
     val cellW = (w - gap * 2f) / 3f
@@ -574,6 +579,9 @@ internal fun renderMacroStack(
     protein: Int,
     carbs: Int,
     fat: Int,
+    proteinLabel: String,
+    carbsLabel: String,
+    fatLabel: String,
     goalProtein: Int,
     goalCarbs: Int,
     goalFat: Int,
@@ -589,9 +597,9 @@ internal fun renderMacroStack(
     val display = WidgetFont.Display.typeface(context)
     val mono = WidgetFont.Mono.typeface(context)
     val items = listOf(
-        Triple("P", protein, goalProtein),
-        Triple("C", carbs, goalCarbs),
-        Triple("F", fat, goalFat)
+        Triple(proteinLabel, protein, goalProtein),
+        Triple(carbsLabel, carbs, goalCarbs),
+        Triple(fatLabel, fat, goalFat)
     )
     val gap = (h * 0.025f).coerceIn(1f, 4f)
     val rowH = (h - gap * 2f) / 3f
@@ -764,6 +772,8 @@ internal fun HeroValueImage(
     context: Context,
     value: Int,
     goal: Int,
+    kcalLabel: String,
+    contentDescription: String,
     ink: Color,
     inkDim: Color,
     width: Dp,
@@ -775,11 +785,12 @@ internal fun HeroValueImage(
     val hPx = dpToPx(context, height)
     val inkArgb = ink.toArgb()
     val inkDimArgb = inkDim.toArgb()
-    val bitmap = remember(value, goal, wPx, hPx, inkArgb, inkDimArgb, showBar) {
+    val bitmap = remember(value, goal, kcalLabel, wPx, hPx, inkArgb, inkDimArgb, showBar) {
         renderHeroValue(
             context = context,
             value = value,
             goal = goal,
+            kcalLabel = kcalLabel,
             widthPx = wPx,
             heightPx = hPx,
             ink = inkArgb,
@@ -789,7 +800,7 @@ internal fun HeroValueImage(
     }
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = if (showBar && goal > 0) "$value of $goal calories" else value.toString(),
+        contentDescription = contentDescription,
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )
@@ -799,6 +810,8 @@ internal fun HeroValueImage(
 internal fun ActionStickerImage(
     context: Context,
     water: Boolean,
+    label: String,
+    contentDescription: String,
     useIcon: Boolean,
     canvas: Color,
     ink: Color,
@@ -810,11 +823,12 @@ internal fun ActionStickerImage(
     val hPx = dpToPx(context, height)
     val canvasArgb = canvas.toArgb()
     val inkArgb = ink.toArgb()
-    val bitmap = remember(water, useIcon, wPx, hPx, canvasArgb, inkArgb) {
+    val bitmap = remember(water, label, useIcon, wPx, hPx, canvasArgb, inkArgb) {
         renderActionSticker(
             context = context,
             water = water,
             useIcon = useIcon,
+            label = label,
             widthPx = wPx,
             heightPx = hPx,
             canvasColor = canvasArgb,
@@ -823,7 +837,7 @@ internal fun ActionStickerImage(
     }
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = if (water) "Add water" else "Add food",
+        contentDescription = contentDescription,
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )
@@ -833,6 +847,7 @@ internal fun ActionStickerImage(
 internal fun ActionIconImage(
     context: Context,
     water: Boolean,
+    contentDescription: String,
     color: Color,
     width: Dp,
     height: Dp,
@@ -845,7 +860,7 @@ internal fun ActionIconImage(
         width = width,
         height = height,
         modifier = modifier,
-        contentDescription = if (water) "Add water" else "Add food",
+        contentDescription = contentDescription,
         fillRatio = 0.74f,
     )
 }
@@ -879,6 +894,7 @@ internal fun VectorIconImage(
 internal fun MacroStripImage(
     context: Context,
     data: WidgetTotals,
+    strings: WidgetStrings,
     ink: Color,
     inkDim: Color,
     width: Dp,
@@ -889,12 +905,15 @@ internal fun MacroStripImage(
     val hPx = dpToPx(context, height)
     val inkArgb = ink.toArgb()
     val inkDimArgb = inkDim.toArgb()
-    val bitmap = remember(data.protein, data.carbs, data.fat, wPx, hPx, inkArgb, inkDimArgb) {
+    val bitmap = remember(data.protein, data.carbs, data.fat, strings, wPx, hPx, inkArgb, inkDimArgb) {
         renderMacroStrip(
             context = context,
             protein = data.protein,
             carbs = data.carbs,
             fat = data.fat,
+            proteinLabel = strings.protein,
+            carbsLabel = strings.carbs,
+            fatLabel = strings.fat,
             goalProtein = data.goalProtein,
             goalCarbs = data.goalCarbs,
             goalFat = data.goalFat,
@@ -906,7 +925,7 @@ internal fun MacroStripImage(
     }
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = "Macros ${data.protein} protein, ${data.carbs} carbs, ${data.fat} fat",
+        contentDescription = strings.macrosDescription(data.protein, data.carbs, data.fat),
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )
@@ -916,6 +935,7 @@ internal fun MacroStripImage(
 internal fun MacroStackImage(
     context: Context,
     data: WidgetTotals,
+    strings: WidgetStrings,
     ink: Color,
     inkDim: Color,
     width: Dp,
@@ -930,6 +950,7 @@ internal fun MacroStackImage(
         data.protein,
         data.carbs,
         data.fat,
+        strings,
         data.goalProtein,
         data.goalCarbs,
         data.goalFat,
@@ -943,6 +964,9 @@ internal fun MacroStackImage(
             protein = data.protein,
             carbs = data.carbs,
             fat = data.fat,
+            proteinLabel = strings.protein,
+            carbsLabel = strings.carbs,
+            fatLabel = strings.fat,
             goalProtein = data.goalProtein,
             goalCarbs = data.goalCarbs,
             goalFat = data.goalFat,
@@ -954,7 +978,7 @@ internal fun MacroStackImage(
     }
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = "Macros ${data.protein} protein, ${data.carbs} carbs, ${data.fat} fat",
+        contentDescription = strings.macrosDescription(data.protein, data.carbs, data.fat),
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )

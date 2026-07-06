@@ -93,30 +93,32 @@ internal fun ProgressContent(
     val w = size.width.value
     val h = size.height.value
     val palette = paletteFrom(data)
+    val strings = widgetStrings(context)
     val c = cols(w.toInt())
     val r = rows(h.toInt())
 
     Box(modifier = GlanceModifier.fillMaxSize().background(palette.canvas).padding(Gap)) {
         when {
-            r == 1 && c == 1 -> Layout1x1(context, w, h, data, palette, openIntent)
-            r == 1 -> LayoutStrip(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            r == 2 && c == 1 -> Layout1x2(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            r == 2 && c == 2 -> Layout2x2(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            r == 2 && c >= 3 -> LayoutWidex2(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            r >= 3 && c == 1 -> Layout1x3Plus(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            r >= 3 && c >= 2 -> LayoutWidex3Plus(context, w, h, data, palette, addIntent, waterIntent, openIntent)
-            else -> Layout1x1(context, w, h, data, palette, openIntent)
+            r == 1 && c == 1 -> Layout1x1(context, w, h, data, strings, palette, openIntent)
+            r == 1 -> LayoutStrip(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            r == 2 && c == 1 -> Layout1x2(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            r == 2 && c == 2 -> Layout2x2(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            r == 2 && c >= 3 -> LayoutWidex2(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            r >= 3 && c == 1 -> Layout1x3Plus(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            r >= 3 && c >= 2 -> LayoutWidex3Plus(context, w, h, data, strings, palette, addIntent, waterIntent, openIntent)
+            else -> Layout1x1(context, w, h, data, strings, palette, openIntent)
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun Layout1x1(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, openIntent: Intent) {
+private fun Layout1x1(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, openIntent: Intent) {
     HeroAndMacrosTile(
         context,
         tileWidthDp(w, 1, 0),
         tileHeightDp(h, 1, 0),
         data,
+        strings,
         palette,
         openIntent,
         GlanceModifier.fillMaxSize(),
@@ -124,7 +126,7 @@ private fun Layout1x1(context: Context, w: Float, h: Float, data: WidgetTotals, 
 }
 
 @androidx.compose.runtime.Composable
-private fun LayoutStrip(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun LayoutStrip(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val actionCount = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
     val cells = 1 + actionCount
     val gaps = (cells - 1).coerceAtLeast(0)
@@ -132,20 +134,20 @@ private fun LayoutStrip(context: Context, w: Float, h: Float, data: WidgetTotals
     val cellH = tileHeightDp(h, 1, 0)
 
     Row(modifier = GlanceModifier.fillMaxSize()) {
-        HeroAndMacrosTile(context, cellW, cellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+        HeroAndMacrosTile(context, cellW, cellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
         if (data.showFood) {
             Spacer(GlanceModifier.width(Gap))
-            ActionTile(context, cellW, cellH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            ActionTile(context, cellW, cellH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
         }
         if (data.showWater) {
             Spacer(GlanceModifier.width(Gap))
-            ActionTile(context, cellW, cellH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            ActionTile(context, cellW, cellH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun Layout1x2(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun Layout1x2(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val actionCount = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
     val cells = 1 + actionCount
     val gaps = (cells - 1).coerceAtLeast(0)
@@ -153,23 +155,23 @@ private fun Layout1x2(context: Context, w: Float, h: Float, data: WidgetTotals, 
     val cellH = tileHeightDp(h, cells, gaps)
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        HeroAndMacrosTile(context, cellW, cellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+        HeroAndMacrosTile(context, cellW, cellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         if (data.showFood) {
             Spacer(GlanceModifier.height(Gap))
-            ActionTile(context, cellW, cellH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            ActionTile(context, cellW, cellH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
         if (data.showWater) {
             Spacer(GlanceModifier.height(Gap))
-            ActionTile(context, cellW, cellH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            ActionTile(context, cellW, cellH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun Layout2x2(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun Layout2x2(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
     if (actionCells == 0) {
-        HeroAndMacrosTile(context, tileWidthDp(w, 1, 0), tileHeightDp(h, 1, 0), data, palette, openIntent, GlanceModifier.fillMaxSize())
+        HeroAndMacrosTile(context, tileWidthDp(w, 1, 0), tileHeightDp(h, 1, 0), data, strings, palette, openIntent, GlanceModifier.fillMaxSize())
         return
     }
 
@@ -179,18 +181,18 @@ private fun Layout2x2(context: Context, w: Float, h: Float, data: WidgetTotals, 
     val actionH = tileHeightDp(h, 2, 1)
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        HeroAndMacrosTile(context, cellW, cellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+        HeroAndMacrosTile(context, cellW, cellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         Spacer(GlanceModifier.height(Gap))
         Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-            if (data.showFood) ActionTile(context, actionW, actionH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            if (data.showFood) ActionTile(context, actionW, actionH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
-            if (data.showWater) ActionTile(context, actionW, actionH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            if (data.showWater) ActionTile(context, actionW, actionH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val topCells = if (data.showMacros) 4 else 1
     val topGaps = (topCells - 1).coerceAtLeast(0)
     val topCellW = tileWidthDp(w, topCells, topGaps)
@@ -203,29 +205,29 @@ private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotal
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-            HeroTile(context, topCellW, topCellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            HeroTile(context, topCellW, topCellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             if (data.showMacros) {
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "P", data.protein, data.goalProtein, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, strings.protein, data.protein, data.goalProtein, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "C", data.carbs, data.goalCarbs, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, strings.carbs, data.carbs, data.goalCarbs, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "F", data.fat, data.goalFat, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, strings.fat, data.fat, data.goalFat, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             }
         }
         if (actionCells > 0) {
             Spacer(GlanceModifier.height(Gap))
             Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-                if (data.showFood) ActionTile(context, actionW, actionH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showFood) ActionTile(context, actionW, actionH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
-                if (data.showWater) ActionTile(context, actionW, actionH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showWater) ActionTile(context, actionW, actionH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             }
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun Layout1x3Plus(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun Layout1x3Plus(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val actionCount = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
     val macroRow = if (data.showMacros) 1 else 0
     val cells = 1 + macroRow + actionCount
@@ -234,24 +236,24 @@ private fun Layout1x3Plus(context: Context, w: Float, h: Float, data: WidgetTota
     val cellH = tileHeightDp(h, cells, gaps)
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        HeroTile(context, cellW, cellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+        HeroTile(context, cellW, cellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         if (data.showMacros) {
             Spacer(GlanceModifier.height(Gap))
-            MacroRow(context, w, cellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            MacroRow(context, w, cellH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
         if (data.showFood) {
             Spacer(GlanceModifier.height(Gap))
-            ActionTile(context, cellW, cellH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            ActionTile(context, cellW, cellH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
         if (data.showWater) {
             Spacer(GlanceModifier.height(Gap))
-            ActionTile(context, cellW, cellH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            ActionTile(context, cellW, cellH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun LayoutWidex3Plus(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+private fun LayoutWidex3Plus(context: Context, w: Float, h: Float, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val cellW = tileWidthDp(w, 1, 0)
     val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
     val macroRow = if (data.showMacros) 1 else 0
@@ -261,17 +263,17 @@ private fun LayoutWidex3Plus(context: Context, w: Float, h: Float, data: WidgetT
     val actionW = tileWidthDp(w, actionCells.coerceAtLeast(1), (actionCells - 1).coerceAtLeast(0))
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        HeroTile(context, cellW, rowH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+        HeroTile(context, cellW, rowH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         if (data.showMacros) {
             Spacer(GlanceModifier.height(Gap))
-            MacroRow(context, w, rowH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
+            MacroRow(context, w, rowH, data, strings, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
         if (actionCells > 0) {
             Spacer(GlanceModifier.height(Gap))
             Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-                if (data.showFood) ActionTile(context, actionW, rowH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showFood) ActionTile(context, actionW, rowH, water = false, strings, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
-                if (data.showWater) ActionTile(context, actionW, rowH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showWater) ActionTile(context, actionW, rowH, water = true, strings, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             }
         }
     }
@@ -322,6 +324,7 @@ private fun HeroAndMacrosTile(
     width: Dp,
     height: Dp,
     data: WidgetTotals,
+    strings: WidgetStrings,
     palette: WidgetPalette,
     intent: Intent,
     modifier: GlanceModifier,
@@ -337,6 +340,8 @@ private fun HeroAndMacrosTile(
                 context = context,
                 value = data.cal,
                 goal = data.goalCal,
+                kcalLabel = strings.kcal,
+                contentDescription = strings.caloriesDescription(data.cal, data.goalCal.takeIf { data.showGoal }),
                 ink = Color(palette.inkArgb),
                 inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                 width = innerW,
@@ -348,6 +353,7 @@ private fun HeroAndMacrosTile(
                 MacroStripImage(
                     context = context,
                     data = data,
+                    strings = strings,
                     ink = Color(palette.inkArgb),
                     inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                     width = innerW,
@@ -365,6 +371,7 @@ private fun HeroTile(
     width: Dp,
     height: Dp,
     data: WidgetTotals,
+    strings: WidgetStrings,
     palette: WidgetPalette,
     intent: Intent,
     modifier: GlanceModifier,
@@ -378,6 +385,8 @@ private fun HeroTile(
                 context = context,
                 value = data.cal,
                 goal = data.goalCal,
+                kcalLabel = strings.kcal,
+                contentDescription = strings.caloriesDescription(data.cal, data.goalCal.takeIf { data.showGoal }),
                 ink = Color(palette.inkArgb),
                 inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                 width = innerW,
@@ -415,12 +424,13 @@ private fun MacroTile(
 }
 
 @androidx.compose.runtime.Composable
-private fun MacroRow(context: Context, widgetW: Float, height: Dp, data: WidgetTotals, palette: WidgetPalette, intent: Intent, modifier: GlanceModifier) {
+private fun MacroRow(context: Context, widgetW: Float, height: Dp, data: WidgetTotals, strings: WidgetStrings, palette: WidgetPalette, intent: Intent, modifier: GlanceModifier) {
     val stripW = tileWidthDp(widgetW, 1, 0)
     if (stripW.value < 96f) {
         MacroStackImage(
             context = context,
             data = data,
+            strings = strings,
             ink = Color(palette.inkArgb),
             inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
             width = stripW,
@@ -431,6 +441,7 @@ private fun MacroRow(context: Context, widgetW: Float, height: Dp, data: WidgetT
         MacroStripImage(
             context = context,
             data = data,
+            strings = strings,
             ink = Color(palette.inkArgb),
             inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
             width = stripW,
@@ -446,6 +457,7 @@ private fun ActionTile(
     width: Dp,
     height: Dp,
     water: Boolean,
+    strings: WidgetStrings,
     palette: WidgetPalette,
     intent: Intent,
     modifier: GlanceModifier,
@@ -453,6 +465,8 @@ private fun ActionTile(
     ActionStickerImage(
         context = context,
         water = water,
+        label = if (water) strings.water else strings.food,
+        contentDescription = if (water) strings.addWaterDescription else strings.addFoodDescription,
         useIcon = useActionIcons(width, height),
         canvas = Color(palette.canvasArgb),
         ink = Color(palette.inkArgb),

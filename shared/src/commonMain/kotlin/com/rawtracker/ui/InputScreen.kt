@@ -231,9 +231,7 @@ fun InputScreen(controller: RawTrackerController) {
             InputBar(
                 value = ui.input,
                 onValueChange = controller::onInputChange,
-                onWater = { controller.openWaterSheet() },
-                onCamera = { picker.launchCamera() },
-                onGallery = { picker.launchGallery() },
+                onAdd = { controller.openAddChooser() },
                 onSend = doSend,
                 isParsing = ui.isParsing,
                 focusRequester = composerFocus
@@ -252,6 +250,10 @@ fun InputScreen(controller: RawTrackerController) {
                 onDescribe = { controller.chooseDescribe() },
                 onPhoto = { controller.choosePhoto() },
                 onPhotoAndDescribe = { controller.choosePhotoAndDescribe() },
+                onWater = {
+                    controller.dismissAddChooser()
+                    controller.openWaterSheet()
+                },
                 onDismiss = { controller.dismissAddChooser() }
             )
         }
@@ -287,6 +289,7 @@ private fun AddFoodChooser(
     onDescribe: () -> Unit,
     onPhoto: () -> Unit,
     onPhotoAndDescribe: () -> Unit,
+    onWater: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val canvas = RawColors.canvas
@@ -304,13 +307,15 @@ private fun AddFoodChooser(
                 .clickable(enabled = false) {}
                 .padding(20.dp)
         ) {
-            MonoText(strings.addFood, weight = FontWeight.Bold, size = 14.sp)
+            MonoText(strings.add.uppercase(), weight = FontWeight.Bold, size = 14.sp)
             Spacer(Modifier.height(14.dp))
             BrutalButton(strings.describe, onDescribe, Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
             BrutalButton(strings.photo, onPhoto, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
             BrutalButton(strings.photoAndDescribe, onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
+            Spacer(Modifier.height(10.dp))
+            BrutalButton(strings.logWater, onWater, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -448,28 +453,28 @@ private fun TimeChip(epochMs: Long, onTimeChange: (Long) -> Unit) {
 private fun InputBar(
     value: String,
     onValueChange: (String) -> Unit,
-    onWater: () -> Unit,
-    onCamera: () -> Unit,
-    onGallery: () -> Unit,
+    onAdd: () -> Unit,
     onSend: () -> Unit,
     isParsing: Boolean,
     focusRequester: FocusRequester
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         val composerHeight = 52.dp
-        BrutalIconButton(RawIcons.water, strings.logWater, onWater, boxSize = composerHeight)
-        BrutalIconButton(RawIcons.camera, strings.camera, onCamera, boxSize = composerHeight)
-        BrutalIconButton(RawIcons.gallery, strings.pickPhoto, onGallery, boxSize = composerHeight)
+        val composerMaxHeight = 132.dp
+        BrutalIconButton(RawIcons.plus, strings.add, onAdd, boxSize = composerHeight)
         BrutalTextField(
             value = value,
             onValueChange = onValueChange,
             placeholder = strings.foodPlaceholder,
-            modifier = Modifier.weight(1f).height(composerHeight),
-            imeAction = ImeAction.Send,
+            modifier = Modifier.weight(1f),
+            minHeight = composerHeight,
+            maxHeight = composerMaxHeight,
+            singleLine = false,
+            imeAction = ImeAction.Default,
             onImeAction = { if (!isParsing) onSend() },
             focusRequester = focusRequester
         )

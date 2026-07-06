@@ -131,6 +131,8 @@ class RawTrackerController(
     }
 
     // ---- Add-food chooser (from widget) ---------------------------------------
+    fun openAddChooser() = _ui.update { it.copy(showAddChooser = true) }
+
     fun dismissAddChooser() = _ui.update { it.copy(showAddChooser = false) }
 
     /** Text-only entry: close the chooser and raise the composer/keyboard. */

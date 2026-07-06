@@ -162,6 +162,7 @@ fun BrutalTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     minHeight: Dp = 48.dp,
+    maxHeight: Dp = Dp.Unspecified,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -172,16 +173,18 @@ fun BrutalTextField(
     val fieldFocus = focusRequester ?: remember { FocusRequester() }
     Box(
         modifier = modifier
-            .heightIn(min = minHeight)
+            .heightIn(min = minHeight, max = maxHeight)
             .inkBorder(ink)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.CenterStart
+            .padding(horizontal = 12.dp, vertical = if (singleLine) 0.dp else 12.dp),
+        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
     ) {
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus),
             singleLine = singleLine,
+            minLines = 1,
+            maxLines = if (singleLine) 1 else 4,
             textStyle = TextStyle(color = ink, fontFamily = monoFamily(), fontSize = 16.sp),
             cursorBrush = SolidColor(ink),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(

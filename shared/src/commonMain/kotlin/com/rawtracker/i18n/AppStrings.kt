@@ -74,9 +74,11 @@ interface AppStrings {
     val duotone: String
     val customColours: String
     val livePreview: String
+    val livePreviewUnsaved: String
     val primaryInk: String
     val secondaryCanvas: String
     val applyColours: String
+    val discardColours: String
     val widget: String
     val widgetHelp: String
     val calorieGoal: String
@@ -214,9 +216,11 @@ object EnglishStrings : AppStrings {
     override val duotone = "DUOTONE"
     override val customColours = "CUSTOM COLOURS"
     override val livePreview = "live preview"
+    override val livePreviewUnsaved = "live preview - unsaved"
     override val primaryInk = "PRIMARY / INK"
     override val secondaryCanvas = "SECONDARY / CANVAS"
-    override val applyColours = "Apply colours"
+    override val applyColours = "Set custom"
+    override val discardColours = "Discard"
     override val widget = "WIDGET"
     override val widgetHelp = "// choose what the home-screen widget can show (size permitting)"
     override val calorieGoal = "Calorie goal"
@@ -367,9 +371,11 @@ object PolishStrings : AppStrings {
     override val duotone = "DUOTON"
     override val customColours = "WŁASNE KOLORY"
     override val livePreview = "podgląd na żywo"
+    override val livePreviewUnsaved = "podgląd na żywo - niezapisany"
     override val primaryInk = "PODSTAWOWY / TUSZ"
     override val secondaryCanvas = "DRUGI / TŁO"
-    override val applyColours = "Zastosuj kolory"
+    override val applyColours = "Ustaw własne"
+    override val discardColours = "Odrzuć"
     override val widget = "WIDŻET"
     override val widgetHelp = "// wybierz, co widżet na ekranie głównym może pokazać"
     override val calorieGoal = "Cel kalorii"

@@ -57,9 +57,15 @@ private val PRESETS = listOf(
 )
 
 @Composable
-fun SettingsScreen(controller: RawTrackerController) {
+fun SettingsScreen(
+    controller: RawTrackerController,
+    savedDuotone: DuotonePrefs,
+    activeDuotone: DuotonePrefs,
+    onPreviewDuotone: (DuotonePrefs) -> Unit,
+    onApplyPreview: () -> Unit,
+    onDiscardPreview: () -> Unit,
+) {
     val goals by controller.goals.collectAsState()
-    val duotone by controller.duotone.collectAsState()
     val apiKey by controller.apiKey.collectAsState()
     val ink = RawColors.ink
 
@@ -82,7 +88,15 @@ fun SettingsScreen(controller: RawTrackerController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             MonoText(strings.settingsTitle, weight = FontWeight.Bold, size = 16.sp)
-            BrutalIconButton(RawIcons.close, strings.back, { controller.openInput() }, boxSize = 40.dp)
+            BrutalIconButton(
+                RawIcons.close,
+                strings.back,
+                {
+                    onDiscardPreview()
+                    controller.openInput()
+                },
+                boxSize = 40.dp
+            )
         }
 
         EditorialSectionLabel(strings.dailyTargets)
@@ -115,55 +129,52 @@ fun SettingsScreen(controller: RawTrackerController) {
         EditorialSectionLabel(strings.duotone)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PRESETS.forEach { s ->
-                val selected = s.canvas == duotone.canvas && s.ink == duotone.ink
-                Box(
-                    Modifier
-                        .size(48.dp)
-                        .background(Color(s.canvas), RoundedCornerShape(5.dp))
-                        .inkBorder(if (selected) ink else Color(s.ink), if (selected) 3.dp else 2.dp)
-                        .clickable { controller.saveDuotone(DuotonePrefs(s.canvas, s.ink)) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(Modifier.size(20.dp).background(Color(s.ink), RoundedCornerShape(3.dp)))
-                }
+                PaletteTile(
+                    canvas = Color(s.canvas),
+                    ink = Color(s.ink),
+                    selected = s.canvas == activeDuotone.canvas && s.ink == activeDuotone.ink,
+                    onClick = { onPreviewDuotone(DuotonePrefs(s.canvas, s.ink)) }
+                )
             }
         }
 
         Spacer(Modifier.height(20.dp))
         EditorialSectionLabel(strings.customColours)
-        var inkColor by remember(duotone.ink) { mutableStateOf(Color(duotone.ink)) }
-        var canvasColor by remember(duotone.canvas) { mutableStateOf(Color(duotone.canvas)) }
+        val inkColor = Color(activeDuotone.ink)
+        val canvasColor = Color(activeDuotone.canvas)
+        val hasPreviewChanges = activeDuotone != savedDuotone
         Row(
             Modifier.fillMaxWidth().padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                Modifier.size(44.dp).background(canvasColor, RoundedCornerShape(5.dp)).inkBorder(inkColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(Modifier.size(18.dp).background(inkColor, RoundedCornerShape(3.dp)))
-            }
-            MonoText(strings.livePreview, color = ink.copy(alpha = 0.6f), size = 11.sp)
+            PaletteTile(
+                canvas = canvasColor,
+                ink = inkColor,
+                selected = hasPreviewChanges,
+                onClick = { onPreviewDuotone(activeDuotone) },
+                size = 44
+            )
+            MonoText(
+                if (hasPreviewChanges) strings.livePreviewUnsaved else strings.livePreview,
+                color = ink.copy(alpha = 0.6f),
+                size = 11.sp
+            )
         }
         MonoText(strings.primaryInk, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
-        HsvColorPicker(inkColor) { inkColor = it }
+        HsvColorPicker(inkColor) {
+            onPreviewDuotone(activeDuotone.copy(ink = it.toArgbLong()))
+        }
         Spacer(Modifier.height(14.dp))
         MonoText(strings.secondaryCanvas, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
-        HsvColorPicker(canvasColor) { canvasColor = it }
+        HsvColorPicker(canvasColor) {
+            onPreviewDuotone(activeDuotone.copy(canvas = it.toArgbLong()))
+        }
         Spacer(Modifier.height(12.dp))
-        BrutalButton(
-            strings.applyColours,
-            {
-                controller.saveDuotone(
-                    DuotonePrefs(
-                        canvas = canvasColor.toArgbLong(),
-                        ink = inkColor.toArgbLong()
-                    )
-                )
-            },
-            Modifier.fillMaxWidth()
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            BrutalButton(strings.applyColours, onApplyPreview, Modifier.weight(1f), filled = true)
+            BrutalButton(strings.discardColours, onDiscardPreview, Modifier.weight(1f), filled = false)
+        }
 
         Spacer(Modifier.height(24.dp))
         EditorialSectionLabel(strings.widget)
@@ -260,6 +271,27 @@ fun SettingsScreen(controller: RawTrackerController) {
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         Spacer(Modifier.height(40.dp))
+    }
+}
+
+@Composable
+private fun PaletteTile(
+    canvas: Color,
+    ink: Color,
+    selected: Boolean,
+    onClick: () -> Unit,
+    size: Int = 48,
+) {
+    val border = if (selected) 3.dp else 2.dp
+    Box(
+        Modifier
+            .size(size.dp)
+            .background(canvas, RoundedCornerShape(5.dp))
+            .inkBorder(ink, border)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(Modifier.size((size * 0.46f).dp).background(ink, RoundedCornerShape(3.dp)))
     }
 }
 

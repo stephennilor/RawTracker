@@ -33,10 +33,7 @@ interface AppStrings {
     val addFood: String
     val describe: String
     val photo: String
-    val photoAndDescribe: String
-    val cameraAndDescribe: String
     val pickPhotos: String
-    val photosAndDescribe: String
     val previousDay: String
     val nextDay: String
     val kcal: String
@@ -183,10 +180,7 @@ object EnglishStrings : AppStrings {
     override val addFood = "ADD FOOD"
     override val describe = "Describe"
     override val photo = "Photo"
-    override val photoAndDescribe = "Photo + describe"
-    override val cameraAndDescribe = "Camera + describe"
     override val pickPhotos = "Pick photo(s)"
-    override val photosAndDescribe = "Photo(s) + describe"
     override val previousDay = "Previous day"
     override val nextDay = "Next day"
     override val kcal = "KCAL"
@@ -347,10 +341,7 @@ object PolishStrings : AppStrings {
     override val addFood = "DODAJ JEDZENIE"
     override val describe = "Opisz"
     override val photo = "Zdjęcie"
-    override val photoAndDescribe = "Zdjęcie + opis"
-    override val cameraAndDescribe = "Aparat + opis"
     override val pickPhotos = "Wybierz zdjęcia"
-    override val photosAndDescribe = "Zdjęcia + opis"
     override val previousDay = "Poprzedni dzień"
     override val nextDay = "Następny dzień"
     override val kcal = "KCAL"

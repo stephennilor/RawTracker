@@ -146,27 +146,15 @@ class RawTrackerController(
         _focusInput.update { it + 1 }
     }
 
-    /** Photo-only entry: close the chooser and open the camera. */
+    /** Photo entry: close the chooser, open the camera, then focus the composer once attached. */
     fun choosePhoto() {
-        _ui.update { it.copy(showAddChooser = false) }
-        container.cameraRequest.value += 1
-    }
-
-    /** Gallery entry: close the chooser and open the multi-select photo picker. */
-    fun chooseGallery() {
-        _ui.update { it.copy(showAddChooser = false) }
-        _galleryRequest.update { it + 1 }
-    }
-
-    /** Photo + text: open the camera, then focus the composer once the shot is attached. */
-    fun choosePhotoAndDescribe() {
         focusAfterPhoto = true
         _ui.update { it.copy(showAddChooser = false) }
         container.cameraRequest.value += 1
     }
 
-    /** Gallery + text: open multi-select, then focus the composer once photos are attached. */
-    fun chooseGalleryAndDescribe() {
+    /** Gallery entry: close the chooser, open multi-select, then focus the composer once attached. */
+    fun chooseGallery() {
         focusAfterPhoto = true
         _ui.update { it.copy(showAddChooser = false) }
         _galleryRequest.update { it + 1 }

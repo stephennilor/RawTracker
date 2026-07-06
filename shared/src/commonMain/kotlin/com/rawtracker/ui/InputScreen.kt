@@ -266,8 +266,6 @@ fun InputScreen(controller: RawTrackerController) {
                 onDescribe = { controller.chooseDescribe() },
                 onPhoto = { controller.choosePhoto() },
                 onGallery = { controller.chooseGallery() },
-                onPhotoAndDescribe = { controller.choosePhotoAndDescribe() },
-                onGalleryAndDescribe = { controller.chooseGalleryAndDescribe() },
                 onWater = {
                     controller.dismissAddChooser()
                     controller.openWaterSheet()
@@ -307,8 +305,6 @@ private fun AddFoodChooser(
     onDescribe: () -> Unit,
     onPhoto: () -> Unit,
     onGallery: () -> Unit,
-    onPhotoAndDescribe: () -> Unit,
-    onGalleryAndDescribe: () -> Unit,
     onWater: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -334,10 +330,6 @@ private fun AddFoodChooser(
             BrutalButton(strings.camera, onPhoto, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
             BrutalButton(strings.pickPhotos, onGallery, Modifier.fillMaxWidth(), filled = false)
-            Spacer(Modifier.height(10.dp))
-            BrutalButton(strings.cameraAndDescribe, onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
-            Spacer(Modifier.height(10.dp))
-            BrutalButton(strings.photosAndDescribe, onGalleryAndDescribe, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
             BrutalButton(strings.logWater, onWater, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(8.dp))

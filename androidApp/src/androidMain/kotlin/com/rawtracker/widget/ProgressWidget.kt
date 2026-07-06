@@ -206,11 +206,11 @@ private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotal
             HeroTile(context, topCellW, topCellH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             if (data.showMacros) {
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "P", data.protein, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, "P", data.protein, data.goalProtein, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "C", data.carbs, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, "C", data.carbs, data.goalCarbs, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
                 Spacer(GlanceModifier.width(Gap))
-                MacroTile(context, "F", data.fat, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                MacroTile(context, "F", data.fat, data.goalFat, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             }
         }
         if (actionCells > 0) {
@@ -300,6 +300,23 @@ private fun GridTile(
 }
 
 @androidx.compose.runtime.Composable
+private fun DataTile(
+    palette: WidgetPalette,
+    modifier: GlanceModifier,
+    intent: Intent,
+    content: @androidx.compose.runtime.Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .background(palette.canvas)
+            .clickable(actionStartActivity(intent)),
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
+    }
+}
+
+@androidx.compose.runtime.Composable
 private fun HeroAndMacrosTile(
     context: Context,
     width: Dp,
@@ -309,35 +326,24 @@ private fun HeroAndMacrosTile(
     intent: Intent,
     modifier: GlanceModifier,
 ) {
-    val innerW = width - BorderWidth * 2
-    val innerH = height - BorderWidth * 2
-    val goalH = if (data.showGoal) innerH.fraction(if (data.showMacros) 0.16f else 0.28f) else 0.dp
+    val innerW = width
+    val innerH = height
     val macroH = if (data.showMacros) innerH.fraction(if (data.showGoal) 0.30f else 0.38f) else 0.dp
-    val labelH = if (!data.showGoal && !data.showMacros) innerH.fraction(0.28f) else 0.dp
-    val calH = innerH - goalH - macroH - labelH
+    val calH = innerH - macroH
 
-    GridTile(palette, modifier, inverted = false, intent = intent) {
+    DataTile(palette, modifier, intent) {
         Column(modifier = GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            StretchedTextImage(
+            HeroValueImage(
                 context = context,
-                text = data.cal.toString(),
-                color = Color(palette.inkArgb),
+                value = data.cal,
+                goal = data.goalCal,
+                ink = Color(palette.inkArgb),
+                inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                 width = innerW,
                 height = calH,
-                font = WidgetFont.Display,
+                showBar = data.showGoal,
                 modifier = GlanceModifier.fillMaxWidth().height(calH),
             )
-            if (data.showGoal) {
-                StretchedTextImage(
-                    context = context,
-                    text = "/ ${data.goalCal}",
-                    color = Color(palette.inkArgb).copy(alpha = 0.68f),
-                    width = innerW,
-                    height = goalH,
-                    font = WidgetFont.Mono,
-                    modifier = GlanceModifier.fillMaxWidth().height(goalH),
-                )
-            }
             if (data.showMacros) {
                 MacroStripImage(
                     context = context,
@@ -347,16 +353,6 @@ private fun HeroAndMacrosTile(
                     width = innerW,
                     height = macroH,
                     modifier = GlanceModifier.fillMaxWidth().height(macroH),
-                )
-            } else if (!data.showGoal) {
-                StretchedTextImage(
-                    context = context,
-                    text = "KCAL",
-                    color = Color(palette.inkArgb).copy(alpha = 0.68f),
-                    width = innerW,
-                    height = labelH,
-                    font = WidgetFont.Mono,
-                    modifier = GlanceModifier.fillMaxWidth().height(labelH),
                 )
             }
         }
@@ -373,30 +369,21 @@ private fun HeroTile(
     intent: Intent,
     modifier: GlanceModifier,
 ) {
-    val innerW = width - BorderWidth * 2
-    val innerH = height - BorderWidth * 2
-    val calH = innerH.fraction(if (data.showGoal) 0.68f else 0.72f)
-    val labelH = innerH - calH
+    val innerW = width
+    val innerH = height
 
-    GridTile(palette, modifier, inverted = false, intent = intent) {
+    DataTile(palette, modifier, intent) {
         Column(modifier = GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            StretchedTextImage(
+            HeroValueImage(
                 context = context,
-                text = data.cal.toString(),
-                color = Color(palette.inkArgb),
+                value = data.cal,
+                goal = data.goalCal,
+                ink = Color(palette.inkArgb),
+                inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                 width = innerW,
-                height = calH,
-                font = WidgetFont.Display,
-                modifier = GlanceModifier.fillMaxWidth().height(calH),
-            )
-            StretchedTextImage(
-                context = context,
-                text = if (data.showGoal) "/ ${data.goalCal}" else "KCAL",
-                color = Color(palette.inkArgb).copy(alpha = 0.68f),
-                width = innerW,
-                height = labelH,
-                font = WidgetFont.Mono,
-                modifier = GlanceModifier.fillMaxWidth().height(labelH),
+                height = innerH,
+                showBar = data.showGoal,
+                modifier = GlanceModifier.fillMaxWidth().height(innerH),
             )
         }
     }
@@ -407,6 +394,7 @@ private fun MacroTile(
     context: Context,
     label: String,
     value: Int,
+    goal: Int,
     width: Dp,
     height: Dp,
     palette: WidgetPalette,
@@ -417,6 +405,7 @@ private fun MacroTile(
         context = context,
         label = label,
         value = value,
+        goal = goal,
         ink = Color(palette.inkArgb),
         inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
         width = width,
@@ -428,15 +417,27 @@ private fun MacroTile(
 @androidx.compose.runtime.Composable
 private fun MacroRow(context: Context, widgetW: Float, height: Dp, data: WidgetTotals, palette: WidgetPalette, intent: Intent, modifier: GlanceModifier) {
     val stripW = tileWidthDp(widgetW, 1, 0)
-    MacroStripImage(
-        context = context,
-        data = data,
-        ink = Color(palette.inkArgb),
-        inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
-        width = stripW,
-        height = height,
-        modifier = modifier.fillMaxWidth().height(height).clickable(actionStartActivity(intent)),
-    )
+    if (stripW.value < 96f) {
+        MacroStackImage(
+            context = context,
+            data = data,
+            ink = Color(palette.inkArgb),
+            inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
+            width = stripW,
+            height = height,
+            modifier = modifier.fillMaxWidth().height(height).clickable(actionStartActivity(intent)),
+        )
+    } else {
+        MacroStripImage(
+            context = context,
+            data = data,
+            ink = Color(palette.inkArgb),
+            inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
+            width = stripW,
+            height = height,
+            modifier = modifier.fillMaxWidth().height(height).clickable(actionStartActivity(intent)),
+        )
+    }
 }
 
 @androidx.compose.runtime.Composable
@@ -449,29 +450,14 @@ private fun ActionTile(
     intent: Intent,
     modifier: GlanceModifier,
 ) {
-    val innerW = width - BorderWidth * 2
-    val innerH = height - BorderWidth * 2
-    GridTile(palette, modifier, inverted = true, intent = intent) {
-        if (useActionIcons(innerW, innerH)) {
-            ActionIconImage(
-                context = context,
-                water = water,
-                color = Color(palette.canvasArgb),
-                width = innerW,
-                height = innerH,
-                modifier = GlanceModifier.fillMaxSize(),
-            )
-        } else {
-            StretchedTextImage(
-                context = context,
-                text = if (water) "H\u2082O" else "FOOD",
-                color = Color(palette.canvasArgb),
-                width = innerW,
-                height = innerH,
-                font = WidgetFont.Mono,
-                contentDescription = if (water) "Add water" else "Add food",
-                modifier = GlanceModifier.fillMaxSize(),
-            )
-        }
-    }
+    ActionStickerImage(
+        context = context,
+        water = water,
+        useIcon = useActionIcons(width, height),
+        canvas = Color(palette.canvasArgb),
+        ink = Color(palette.inkArgb),
+        width = width,
+        height = height,
+        modifier = modifier.clickable(actionStartActivity(intent)),
+    )
 }

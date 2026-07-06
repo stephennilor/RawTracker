@@ -9,6 +9,7 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -49,7 +50,20 @@ private fun WidgetFont.typeface(context: Context): Typeface {
         WidgetFont.Display -> WidgetFonts.display(context)
         WidgetFont.Mono -> WidgetFonts.mono(context)
     }
-    return Typeface.create(base, Typeface.BOLD)
+    val weight = when (this) {
+        WidgetFont.Display -> 900
+        WidgetFont.Mono -> 500
+    }
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        Typeface.create(base, weight, false)
+    } else {
+        Typeface.create(base, Typeface.BOLD)
+    }
+}
+
+private fun WidgetFont.variationSettings(): String = when (this) {
+    WidgetFont.Display -> "'wght' 700, 'wdth' 120"
+    WidgetFont.Mono -> "'wght' 500"
 }
 
 private fun withAlpha(color: Int, alpha: Float): Int {
@@ -80,21 +94,49 @@ private fun applySoilpunkFinish(bitmap: Bitmap, ink: Int) {
     drawSoilpunkGrain(Canvas(bitmap), bitmap.width, bitmap.height, ink)
 }
 
+private fun progressRatio(value: Int, goal: Int): Float =
+    if (goal <= 0) 0f else (value.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
+
+private fun drawProgressBar(canvas: Canvas, rect: RectF, value: Int, goal: Int, ink: Int, inkDim: Int) {
+    if (goal <= 0 || rect.width() <= 1f || rect.height() <= 1f) return
+    val radius = rect.height() * 0.48f
+    val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = withAlpha(inkDim, 0.52f)
+        style = Paint.Style.FILL
+    }
+    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ink
+        style = Paint.Style.FILL
+    }
+    canvas.drawRoundRect(rect, radius, radius, track)
+    val fillRight = rect.left + rect.width() * progressRatio(value, goal)
+    if (fillRight > rect.left + 1f) {
+        canvas.drawRoundRect(RectF(rect.left, rect.top, fillRight, rect.bottom), radius, radius, fill)
+    }
+}
+
 private fun drawStretchedText(
     canvas: Canvas,
     text: String,
     rect: RectF,
     typeface: Typeface,
+    variationSettings: String,
     color: Int,
     heightRatio: Float,
     minScaleX: Float = 0.35f,
     maxScaleX: Float = 5.5f,
     ghost: Boolean = false,
+    fakeBold: Boolean = false,
+    strokeRatio: Float = 0f,
 ) {
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.typeface = typeface
         this.color = color
         textAlign = Paint.Align.LEFT
+        isFakeBoldText = fakeBold
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            fontVariationSettings = variationSettings
+        }
     }
     val bounds = Rect()
     var textSize = rect.height() * heightRatio
@@ -105,6 +147,9 @@ private fun drawStretchedText(
         paint.textSize = textSize
         paint.getTextBounds(text, 0, text.length, bounds)
     }
+    paint.style = if (strokeRatio > 0f) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL
+    paint.strokeWidth = if (strokeRatio > 0f) (textSize * strokeRatio).coerceIn(1.1f, 5.5f) else 0f
+    paint.strokeJoin = Paint.Join.ROUND
 
     val naturalWidth = paint.measureText(text).coerceAtLeast(1f)
     val scaleX = (rect.width() / naturalWidth).coerceIn(minScaleX, maxScaleX)
@@ -124,6 +169,37 @@ private fun drawStretchedText(
     canvas.translate(startX, baseY)
     canvas.scale(scaleX, 1f)
     canvas.drawText(text, 0f, 0f, paint)
+    canvas.restore()
+}
+
+private fun drawVerticalStretchedText(
+    canvas: Canvas,
+    text: String,
+    rect: RectF,
+    typeface: Typeface,
+    variationSettings: String,
+    color: Int,
+    clockwise: Boolean,
+) {
+    canvas.save()
+    if (clockwise) {
+        canvas.translate(rect.right, rect.top)
+        canvas.rotate(90f)
+    } else {
+        canvas.translate(rect.left, rect.bottom)
+        canvas.rotate(-90f)
+    }
+    drawStretchedText(
+        canvas = canvas,
+        text = text,
+        rect = RectF(0f, 0f, rect.height(), rect.width()),
+        typeface = typeface,
+        variationSettings = variationSettings,
+        color = color,
+        heightRatio = 0.66f,
+        minScaleX = 0.16f,
+        maxScaleX = 1.08f,
+    )
     canvas.restore()
 }
 
@@ -153,13 +229,124 @@ internal fun renderStretchedText(
             (padPx + availH).toFloat()
         ),
         typeface = font.typeface(context),
+        variationSettings = font.variationSettings(),
         color = color,
         heightRatio = if (font == WidgetFont.Display) 0.9f else 0.78f,
         minScaleX = if (font == WidgetFont.Display) 0.14f else 0.65f,
         maxScaleX = if (font == WidgetFont.Display) 1.65f else 1.18f,
         ghost = font == WidgetFont.Display,
+        fakeBold = font == WidgetFont.Display,
+        strokeRatio = if (font == WidgetFont.Display) 0.026f else 0f,
     )
     applySoilpunkFinish(bitmap, color)
+    return bitmap
+}
+
+internal fun renderHeroValue(
+    context: Context,
+    value: Int,
+    goal: Int,
+    widthPx: Int,
+    heightPx: Int,
+    ink: Int,
+    inkDim: Int,
+    showBar: Boolean,
+): Bitmap {
+    val w = widthPx.coerceAtLeast(1)
+    val h = heightPx.coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val pad = (minOf(w, h) * 0.04f).coerceIn(2f, 10f)
+    val barH = (h * 0.08f).coerceIn(4f, 14f)
+    val barGap = (h * 0.04f).coerceIn(2f, 8f)
+    val showTarget = showBar && goal > 0
+    val useVerticalLabels = showTarget && h >= 220 && w >= 320
+    val barBottom = if (showTarget) h - pad else h - pad - barGap * 0.5f
+    val barTop = if (showTarget) barBottom - barH else h - pad
+    val textBottom = if (showTarget) barTop - barGap else h - pad
+    val sideW = if (useVerticalLabels) (w * 0.12f).coerceIn(12f, 32f) else 0f
+    val mono = WidgetFont.Mono.typeface(context)
+    drawStretchedText(
+        canvas = canvas,
+        text = value.toString(),
+        rect = RectF(pad + sideW * 0.25f, pad, w - pad - sideW * 0.25f, textBottom.coerceAtLeast(pad + 1f)),
+        typeface = WidgetFont.Display.typeface(context),
+        variationSettings = WidgetFont.Display.variationSettings(),
+        color = ink,
+        heightRatio = 0.96f,
+        minScaleX = 0.14f,
+        maxScaleX = 1.8f,
+        ghost = true,
+        fakeBold = true,
+        strokeRatio = 0.026f,
+    )
+    if (showTarget) {
+        drawProgressBar(
+            canvas = canvas,
+            rect = RectF(pad, barBottom - barH, w - pad, barBottom),
+            value = value,
+            goal = goal,
+            ink = ink,
+            inkDim = inkDim,
+        )
+        if (useVerticalLabels) {
+            drawVerticalStretchedText(
+                canvas = canvas,
+                text = "KCAL",
+                rect = RectF(pad, pad, pad + sideW, textBottom),
+                typeface = mono,
+                variationSettings = WidgetFont.Mono.variationSettings(),
+                color = inkDim,
+                clockwise = false,
+            )
+            drawVerticalStretchedText(
+                canvas = canvas,
+                text = "/ $goal",
+                rect = RectF(w - pad - sideW, pad, w - pad, textBottom),
+                typeface = mono,
+                variationSettings = WidgetFont.Mono.variationSettings(),
+                color = inkDim,
+                clockwise = true,
+            )
+        } else {
+            val labelH = (h * 0.14f).coerceIn(10f, 24f)
+            drawStretchedText(
+                canvas = canvas,
+                text = "KCAL",
+                rect = RectF(pad, pad, w * 0.30f, pad + labelH),
+                typeface = mono,
+                variationSettings = WidgetFont.Mono.variationSettings(),
+                color = inkDim,
+                heightRatio = 0.68f,
+                minScaleX = 0.28f,
+                maxScaleX = 1.0f,
+            )
+            drawStretchedText(
+                canvas = canvas,
+                text = "/ $goal",
+                rect = RectF(w * 0.56f, pad, w - pad, pad + labelH),
+                typeface = mono,
+                variationSettings = WidgetFont.Mono.variationSettings(),
+                color = inkDim,
+                heightRatio = 0.64f,
+                minScaleX = 0.2f,
+                maxScaleX = 1.0f,
+            )
+        }
+    } else {
+        drawStretchedText(
+            canvas = canvas,
+            text = "KCAL",
+            rect = RectF(pad, textBottom - (h * 0.16f).coerceIn(10f, 28f), w - pad, textBottom),
+            typeface = mono,
+            variationSettings = WidgetFont.Mono.variationSettings(),
+            color = inkDim,
+            heightRatio = 0.72f,
+            minScaleX = 0.55f,
+            maxScaleX = 1.05f,
+        )
+    }
+    applySoilpunkFinish(bitmap, ink)
     return bitmap
 }
 
@@ -212,11 +399,71 @@ internal fun renderVectorIcon(
     return bitmap
 }
 
+internal fun renderActionSticker(
+    context: Context,
+    water: Boolean,
+    useIcon: Boolean,
+    widthPx: Int,
+    heightPx: Int,
+    canvasColor: Int,
+    ink: Int,
+): Bitmap {
+    val w = widthPx.coerceAtLeast(1)
+    val h = heightPx.coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val radius = (minOf(w, h) * 0.11f).coerceIn(8f, 28f)
+    val pad = (minOf(w, h) * 0.08f).coerceIn(5f, 18f)
+    val stickerRect = RectF(0f, 0f, w.toFloat(), h.toFloat())
+    val stickerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ink
+        style = Paint.Style.FILL
+    }
+    canvas.drawRoundRect(stickerRect, radius, radius, stickerPaint)
+    if (useIcon) {
+        val iconSize = minOf((w - pad * 2f).toInt(), (h - pad * 2f).toInt()).coerceAtLeast(1)
+        val icon = renderVectorIcon(
+            vector = if (water) RawIcons.water else RawIcons.food,
+            widthPx = iconSize,
+            heightPx = iconSize,
+            color = canvasColor,
+            fillRatio = 0.86f,
+            grain = false,
+        )
+        canvas.drawBitmap(icon, (w - iconSize) / 2f, (h - iconSize) / 2f, null)
+    } else {
+        val base = WidgetFonts.mono(context)
+        val typeface = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Typeface.create(base, 800, false)
+        } else {
+            Typeface.create(base, Typeface.BOLD)
+        }
+        drawStretchedText(
+            canvas = canvas,
+            text = if (water) "H\u2082O" else "FOOD",
+            rect = RectF(pad, pad * 0.6f, w - pad, h - pad * 0.6f),
+            typeface = typeface,
+            variationSettings = "'wght' 800",
+            color = canvasColor,
+            heightRatio = 0.82f,
+            minScaleX = 0.42f,
+            maxScaleX = 1.42f,
+            fakeBold = true,
+            strokeRatio = 0.012f,
+        )
+    }
+    applySoilpunkFinish(bitmap, canvasColor)
+    return bitmap
+}
+
 internal fun renderMacroStrip(
     context: Context,
     protein: Int,
     carbs: Int,
     fat: Int,
+    goalProtein: Int,
+    goalCarbs: Int,
+    goalFat: Int,
     widthPx: Int,
     heightPx: Int,
     ink: Int,
@@ -229,17 +476,17 @@ internal fun renderMacroStrip(
     val display = WidgetFont.Display.typeface(context)
     val mono = WidgetFont.Mono.typeface(context)
     val items = listOf(
-        "P" to protein.toString(),
-        "C" to carbs.toString(),
-        "F" to fat.toString()
+        Triple("P", protein, goalProtein),
+        Triple("C", carbs, goalCarbs),
+        Triple("F", fat, goalFat)
     )
     val gap = (w * 0.035f).coerceIn(2f, 10f)
     val cellW = (w - gap * 2f) / 3f
 
-    items.forEachIndexed { index, (label, value) ->
+    items.forEachIndexed { index, (label, value, goal) ->
         val left = index * (cellW + gap)
         val right = left + cellW
-        drawMacroCell(canvas, label, value, RectF(left, 0f, right, h.toFloat()), display, mono, ink, inkDim)
+        drawMacroCell(canvas, label, value.toString(), goal, RectF(left, 0f, right, h.toFloat()), display, mono, ink, inkDim)
     }
     applySoilpunkFinish(bitmap, ink)
     return bitmap
@@ -249,6 +496,7 @@ internal fun renderMacroCell(
     context: Context,
     label: String,
     value: Int,
+    goal: Int,
     widthPx: Int,
     heightPx: Int,
     ink: Int,
@@ -262,6 +510,7 @@ internal fun renderMacroCell(
         canvas = canvas,
         label = label,
         value = value.toString(),
+        goal = goal,
         rect = RectF(0f, 0f, w.toFloat(), h.toFloat()),
         display = WidgetFont.Display.typeface(context),
         mono = WidgetFont.Mono.typeface(context),
@@ -272,39 +521,179 @@ internal fun renderMacroCell(
     return bitmap
 }
 
+internal fun renderMacroStack(
+    context: Context,
+    protein: Int,
+    carbs: Int,
+    fat: Int,
+    goalProtein: Int,
+    goalCarbs: Int,
+    goalFat: Int,
+    widthPx: Int,
+    heightPx: Int,
+    ink: Int,
+    inkDim: Int,
+): Bitmap {
+    val w = widthPx.coerceAtLeast(1)
+    val h = heightPx.coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val display = WidgetFont.Display.typeface(context)
+    val mono = WidgetFont.Mono.typeface(context)
+    val items = listOf(
+        Triple("P", protein, goalProtein),
+        Triple("C", carbs, goalCarbs),
+        Triple("F", fat, goalFat)
+    )
+    val gap = (h * 0.025f).coerceIn(1f, 4f)
+    val rowH = (h - gap * 2f) / 3f
+    items.forEachIndexed { index, (label, value, goal) ->
+        val top = index * (rowH + gap)
+        val bottom = top + rowH
+        drawMacroStackRow(
+            canvas = canvas,
+            label = label,
+            value = value,
+            goal = goal,
+            rect = RectF(0f, top, w.toFloat(), bottom),
+            display = display,
+            mono = mono,
+            ink = ink,
+            inkDim = inkDim,
+        )
+    }
+    applySoilpunkFinish(bitmap, ink)
+    return bitmap
+}
+
 private fun drawMacroCell(
     canvas: Canvas,
     label: String,
     value: String,
+    goal: Int,
     rect: RectF,
     display: Typeface,
     mono: Typeface,
     ink: Int,
     inkDim: Int,
 ) {
-    val labelW = rect.width() * 0.22f
-    val gap = rect.width() * 0.03f
-    drawStretchedText(
+    val padX = rect.width() * 0.025f
+    val padY = rect.height() * 0.02f
+    val labelH = (rect.height() * 0.20f).coerceIn(8f, 22f)
+    val barH = (rect.height() * 0.075f).coerceIn(3f, 10f)
+    val barBottom = rect.bottom - rect.height() * 0.06f
+    val barTop = barBottom - barH
+    drawProgressBar(
         canvas = canvas,
-        text = label,
-        rect = RectF(rect.left, rect.top + rect.height() * 0.08f, rect.left + labelW, rect.bottom - rect.height() * 0.08f),
-        typeface = mono,
-        color = inkDim,
-        heightRatio = 0.74f,
-        minScaleX = 0.65f,
-        maxScaleX = 1.0f
+        rect = RectF(rect.left + padX, barTop, rect.right - padX, barBottom),
+        value = value.toIntOrNull() ?: 0,
+        goal = goal,
+        ink = ink,
+        inkDim = inkDim,
     )
     drawStretchedText(
         canvas = canvas,
         text = value,
-        rect = RectF(rect.left + labelW + gap, rect.top, rect.right, rect.bottom),
+        rect = RectF(rect.left + padX, rect.top + padY, rect.right - padX, barTop - rect.height() * 0.02f),
         typeface = display,
+        variationSettings = WidgetFont.Display.variationSettings(),
         color = ink,
-        heightRatio = 0.9f,
+        heightRatio = 0.96f,
+        minScaleX = 0.14f,
+        maxScaleX = 1.56f,
+        ghost = true,
+        fakeBold = true,
+        strokeRatio = 0.026f,
+    )
+    drawStretchedText(
+        canvas = canvas,
+        text = label,
+        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.22f, rect.top + padY + labelH),
+        typeface = mono,
+        variationSettings = WidgetFont.Mono.variationSettings(),
+        color = inkDim,
+        heightRatio = 0.68f,
+        minScaleX = 0.35f,
+        maxScaleX = 1.0f,
+    )
+    if (goal > 0 && rect.width() >= 58f) {
+        drawStretchedText(
+            canvas = canvas,
+            text = "/ $goal",
+            rect = RectF(rect.left + rect.width() * 0.36f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
+            typeface = mono,
+            variationSettings = WidgetFont.Mono.variationSettings(),
+            color = inkDim,
+            heightRatio = 0.62f,
+            minScaleX = 0.28f,
+            maxScaleX = 1.0f,
+        )
+    }
+}
+
+private fun drawMacroStackRow(
+    canvas: Canvas,
+    label: String,
+    value: Int,
+    goal: Int,
+    rect: RectF,
+    display: Typeface,
+    mono: Typeface,
+    ink: Int,
+    inkDim: Int,
+) {
+    val padX = rect.width() * 0.035f
+    val padY = rect.height() * 0.05f
+    val barH = (rect.height() * 0.14f).coerceIn(2f, 7f)
+    val barBottom = rect.bottom - padY
+    val textBottom = barBottom - barH - rect.height() * 0.02f
+    val labelH = (rect.height() * 0.26f).coerceIn(8f, 18f)
+    drawProgressBar(
+        canvas = canvas,
+        rect = RectF(rect.left + padX, barBottom - barH, rect.right - padX, barBottom),
+        value = value,
+        goal = goal,
+        ink = ink,
+        inkDim = inkDim,
+    )
+    drawStretchedText(
+        canvas = canvas,
+        text = value.toString(),
+        rect = RectF(rect.left + padX, rect.top + padY, rect.right - padX, textBottom),
+        typeface = display,
+        variationSettings = WidgetFont.Display.variationSettings(),
+        color = ink,
+        heightRatio = 0.96f,
         minScaleX = 0.14f,
         maxScaleX = 1.45f,
         ghost = true,
+        fakeBold = true,
+        strokeRatio = 0.026f,
     )
+    drawStretchedText(
+        canvas = canvas,
+        text = label,
+        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.22f, rect.top + padY + labelH),
+        typeface = mono,
+        variationSettings = WidgetFont.Mono.variationSettings(),
+        color = inkDim,
+        heightRatio = 0.68f,
+        minScaleX = 0.35f,
+        maxScaleX = 1.0f,
+    )
+    if (goal > 0 && rect.width() >= 70f) {
+        drawStretchedText(
+            canvas = canvas,
+            text = "/ $goal",
+            rect = RectF(rect.left + rect.width() * 0.34f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
+            typeface = mono,
+            variationSettings = WidgetFont.Mono.variationSettings(),
+            color = inkDim,
+            heightRatio = 0.6f,
+            minScaleX = 0.24f,
+            maxScaleX = 1.0f,
+        )
+    }
 }
 
 private fun dpToPx(context: Context, dp: Dp): Int {
@@ -332,6 +721,76 @@ internal fun StretchedTextImage(
     Image(
         provider = ImageProvider(bitmap),
         contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.FillBounds,
+    )
+}
+
+@Composable
+internal fun HeroValueImage(
+    context: Context,
+    value: Int,
+    goal: Int,
+    ink: Color,
+    inkDim: Color,
+    width: Dp,
+    height: Dp,
+    showBar: Boolean,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val wPx = dpToPx(context, width)
+    val hPx = dpToPx(context, height)
+    val inkArgb = ink.toArgb()
+    val inkDimArgb = inkDim.toArgb()
+    val bitmap = remember(value, goal, wPx, hPx, inkArgb, inkDimArgb, showBar) {
+        renderHeroValue(
+            context = context,
+            value = value,
+            goal = goal,
+            widthPx = wPx,
+            heightPx = hPx,
+            ink = inkArgb,
+            inkDim = inkDimArgb,
+            showBar = showBar,
+        )
+    }
+    Image(
+        provider = ImageProvider(bitmap),
+        contentDescription = if (showBar && goal > 0) "$value of $goal calories" else value.toString(),
+        modifier = modifier,
+        contentScale = ContentScale.FillBounds,
+    )
+}
+
+@Composable
+internal fun ActionStickerImage(
+    context: Context,
+    water: Boolean,
+    useIcon: Boolean,
+    canvas: Color,
+    ink: Color,
+    width: Dp,
+    height: Dp,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val wPx = dpToPx(context, width)
+    val hPx = dpToPx(context, height)
+    val canvasArgb = canvas.toArgb()
+    val inkArgb = ink.toArgb()
+    val bitmap = remember(water, useIcon, wPx, hPx, canvasArgb, inkArgb) {
+        renderActionSticker(
+            context = context,
+            water = water,
+            useIcon = useIcon,
+            widthPx = wPx,
+            heightPx = hPx,
+            canvasColor = canvasArgb,
+            ink = inkArgb,
+        )
+    }
+    Image(
+        provider = ImageProvider(bitmap),
+        contentDescription = if (water) "Add water" else "Add food",
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )
@@ -403,6 +862,9 @@ internal fun MacroStripImage(
             protein = data.protein,
             carbs = data.carbs,
             fat = data.fat,
+            goalProtein = data.goalProtein,
+            goalCarbs = data.goalCarbs,
+            goalFat = data.goalFat,
             widthPx = wPx,
             heightPx = hPx,
             ink = inkArgb,
@@ -418,10 +880,9 @@ internal fun MacroStripImage(
 }
 
 @Composable
-internal fun MacroCellImage(
+internal fun MacroStackImage(
     context: Context,
-    label: String,
-    value: Int,
+    data: WidgetTotals,
     ink: Color,
     inkDim: Color,
     width: Dp,
@@ -432,11 +893,62 @@ internal fun MacroCellImage(
     val hPx = dpToPx(context, height)
     val inkArgb = ink.toArgb()
     val inkDimArgb = inkDim.toArgb()
-    val bitmap = remember(label, value, wPx, hPx, inkArgb, inkDimArgb) {
+    val bitmap = remember(
+        data.protein,
+        data.carbs,
+        data.fat,
+        data.goalProtein,
+        data.goalCarbs,
+        data.goalFat,
+        wPx,
+        hPx,
+        inkArgb,
+        inkDimArgb,
+    ) {
+        renderMacroStack(
+            context = context,
+            protein = data.protein,
+            carbs = data.carbs,
+            fat = data.fat,
+            goalProtein = data.goalProtein,
+            goalCarbs = data.goalCarbs,
+            goalFat = data.goalFat,
+            widthPx = wPx,
+            heightPx = hPx,
+            ink = inkArgb,
+            inkDim = inkDimArgb,
+        )
+    }
+    Image(
+        provider = ImageProvider(bitmap),
+        contentDescription = "Macros ${data.protein} protein, ${data.carbs} carbs, ${data.fat} fat",
+        modifier = modifier,
+        contentScale = ContentScale.FillBounds,
+    )
+}
+
+@Composable
+internal fun MacroCellImage(
+    context: Context,
+    label: String,
+    value: Int,
+    goal: Int,
+    ink: Color,
+    inkDim: Color,
+    width: Dp,
+    height: Dp,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val wPx = dpToPx(context, width)
+    val hPx = dpToPx(context, height)
+    val inkArgb = ink.toArgb()
+    val inkDimArgb = inkDim.toArgb()
+    val bitmap = remember(label, value, goal, wPx, hPx, inkArgb, inkDimArgb) {
         renderMacroCell(
             context = context,
             label = label,
             value = value,
+            goal = goal,
             widthPx = wPx,
             heightPx = hPx,
             ink = inkArgb,

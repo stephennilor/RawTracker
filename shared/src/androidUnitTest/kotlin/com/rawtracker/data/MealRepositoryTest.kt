@@ -157,12 +157,13 @@ class MealRepositoryTest {
     fun goalsRoundTripWithDefaults() = runTest {
         assertEquals(Goals(), repo.observeGoals().first())
 
-        repo.saveGoals(Goals(calories = 3000, protein = 200, carbs = 300, fat = 90))
+        repo.saveGoals(Goals(calories = 3000, protein = 200, carbs = 300, fat = 90, waterMl = 3200))
         val saved = repo.observeGoals().first()
         assertEquals(3000, saved.calories)
         assertEquals(200, saved.protein)
         assertEquals(300, saved.carbs)
         assertEquals(90, saved.fat)
+        assertEquals(3200, saved.waterMl)
     }
 
     @Test

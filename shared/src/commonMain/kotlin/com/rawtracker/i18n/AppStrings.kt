@@ -43,6 +43,7 @@ interface AppStrings {
     val proteinShort: String
     val carbsShort: String
     val fatShort: String
+    val waterShort: String
     val delete: String
     val camera: String
     val pickPhoto: String
@@ -73,6 +74,7 @@ interface AppStrings {
     val back: String
     val dailyTargets: String
     val calories: String
+    val waterTarget: String
     val saveTargets: String
     val duotone: String
     val customColours: String
@@ -191,6 +193,7 @@ object EnglishStrings : AppStrings {
     override val proteinShort = "P"
     override val carbsShort = "C"
     override val fatShort = "F"
+    override val waterShort = "H\u2082O"
     override val delete = "Delete"
     override val camera = "Camera"
     override val pickPhoto = "Pick photo"
@@ -221,6 +224,7 @@ object EnglishStrings : AppStrings {
     override val back = "Back"
     override val dailyTargets = "DAILY TARGETS"
     override val calories = "CALORIES"
+    override val waterTarget = "WATER (ml)"
     override val saveTargets = "Save targets"
     override val duotone = "DUOTONE"
     override val customColours = "CUSTOM COLOURS"
@@ -353,6 +357,7 @@ object PolishStrings : AppStrings {
     override val proteinShort = "B"
     override val carbsShort = "W"
     override val fatShort = "T"
+    override val waterShort = "H\u2082O"
     override val delete = "Usuń"
     override val camera = "Aparat"
     override val pickPhoto = "Wybierz zdjęcie"
@@ -383,6 +388,7 @@ object PolishStrings : AppStrings {
     override val back = "Wstecz"
     override val dailyTargets = "CELE DZIENNE"
     override val calories = "KALORIE"
+    override val waterTarget = "WODA (ml)"
     override val saveTargets = "Zapisz cele"
     override val duotone = "DUOTON"
     override val customColours = "WŁASNE KOLORY"

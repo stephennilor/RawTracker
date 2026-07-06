@@ -155,7 +155,8 @@ class MealRepository(
             calories = m["cal"]?.toIntOrNull() ?: 2500,
             protein = m["protein"]?.toIntOrNull() ?: 165,
             carbs = m["carbs"]?.toIntOrNull() ?: 250,
-            fat = m["fat"]?.toIntOrNull() ?: 80
+            fat = m["fat"]?.toIntOrNull() ?: 80,
+            waterMl = m["water_ml"]?.toIntOrNull() ?: 2500
         )
     }
 
@@ -166,7 +167,8 @@ class MealRepository(
                 calories = m["cal"]?.toIntOrNull() ?: 2500,
                 protein = m["protein"]?.toIntOrNull() ?: 165,
                 carbs = m["carbs"]?.toIntOrNull() ?: 250,
-                fat = m["fat"]?.toIntOrNull() ?: 80
+                fat = m["fat"]?.toIntOrNull() ?: 80,
+                waterMl = m["water_ml"]?.toIntOrNull() ?: 2500
             )
         }
 
@@ -197,6 +199,7 @@ class MealRepository(
             q.upsertGoal("protein", goals.protein.toString())
             q.upsertGoal("carbs", goals.carbs.toString())
             q.upsertGoal("fat", goals.fat.toString())
+            q.upsertGoal("water_ml", goals.waterMl.toString())
         }
     }
 

@@ -96,6 +96,7 @@ fun SettingsScreen(
     var protein by remember(goals) { mutableStateOf(goals.protein.toString()) }
     var carbs by remember(goals) { mutableStateOf(goals.carbs.toString()) }
     var fat by remember(goals) { mutableStateOf(goals.fat.toString()) }
+    var water by remember(goals) { mutableStateOf(goals.waterMl.toString()) }
     var keyInput by remember(apiKey) { mutableStateOf(apiKey) }
 
     Column(
@@ -132,6 +133,8 @@ fun SettingsScreen(
             LabeledNumber(strings.carbs, carbs, { carbs = it }, Modifier.weight(1f))
             LabeledNumber(strings.fat, fat, { fat = it }, Modifier.weight(1f))
         }
+        Spacer(Modifier.height(10.dp))
+        LabeledNumber(strings.waterTarget, water, { water = it }, Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
         BrutalButton(
             strings.saveTargets,
@@ -141,7 +144,8 @@ fun SettingsScreen(
                         calories = cal.toIntOrNull() ?: 2500,
                         protein = protein.toIntOrNull() ?: 165,
                         carbs = carbs.toIntOrNull() ?: 250,
-                        fat = fat.toIntOrNull() ?: 80
+                        fat = fat.toIntOrNull() ?: 80,
+                        waterMl = water.toIntOrNull() ?: 2500
                     )
                 )
             },

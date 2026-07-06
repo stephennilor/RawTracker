@@ -60,6 +60,7 @@ import kotlinx.coroutines.delay
 fun InputScreen(controller: RawTrackerController) {
     val ui by controller.ui.collectAsState()
     val totals by controller.totals.collectAsState()
+    val waterTotal by controller.waterTotal.collectAsState()
     val goals by controller.goals.collectAsState()
     val history by controller.history.collectAsState()
     val selectedDate by controller.selectedDate.collectAsState()
@@ -157,7 +158,9 @@ fun InputScreen(controller: RawTrackerController) {
             calories = totals.calories to goals.calories,
             protein = totals.protein to goals.protein,
             carbs = totals.carbs to goals.carbs,
-            fat = totals.fat to goals.fat
+            fat = totals.fat to goals.fat,
+            water = waterTotal to goals.waterMl,
+            onWaterClick = { controller.openWaterSheet() }
         )
         Spacer(Modifier.height(12.dp))
 
@@ -376,7 +379,9 @@ private fun MacroHeader(
     calories: Pair<Int, Int>,
     protein: Pair<Int, Int>,
     carbs: Pair<Int, Int>,
-    fat: Pair<Int, Int>
+    fat: Pair<Int, Int>,
+    water: Pair<Int, Int>,
+    onWaterClick: () -> Unit
 ) {
     val ink = RawColors.ink
     Column {
@@ -388,31 +393,48 @@ private fun MacroHeader(
             MacroPill(strings.proteinShort, protein, Modifier.weight(1f))
             MacroPill(strings.carbsShort, carbs, Modifier.weight(1f))
             MacroPill(strings.fatShort, fat, Modifier.weight(1f))
+            MacroPill(strings.waterShort, water, Modifier.weight(1f), unit = "ml", onClick = onWaterClick)
         }
     }
 }
 
 @Composable
-private fun MacroPill(label: String, value: Pair<Int, Int>, modifier: Modifier = Modifier) {
+private fun MacroPill(
+    label: String,
+    value: Pair<Int, Int>,
+    modifier: Modifier = Modifier,
+    unit: String = "",
+    onClick: (() -> Unit)? = null
+) {
     val ink = RawColors.ink
-    Column(modifier = modifier.inkBorder(ink).padding(8.dp)) {
+    val tileModifier = modifier
+        .inkBorder(ink)
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .padding(8.dp)
+    Column(modifier = tileModifier) {
         MonoText(label, weight = FontWeight.Bold, size = 10.sp)
+        val displayValue = value.first.toString()
         androidx.compose.material3.Text(
-            text = value.first.toString(),
+            text = displayValue,
             color = ink,
             style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
             maxLines = 1,
             softWrap = false,
             modifier = Modifier.fillMaxWidth().graphicsLayer {
-                scaleX = when (value.first.toString().length) {
+                scaleX = when (displayValue.length) {
                     1, 2 -> 1.08f
-                    3 -> 1f
-                    else -> 0.92f
+                    3 -> 0.98f
+                    4 -> 0.86f
+                    else -> 0.74f
                 }
                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
             }
         )
-        MonoText("/${value.second}", color = ink.copy(alpha = 0.68f), size = 10.sp)
+        MonoText(
+            if (unit.isBlank()) "/${value.second}" else "/${value.second} $unit",
+            color = ink.copy(alpha = 0.68f),
+            size = 10.sp
+        )
     }
 }
 

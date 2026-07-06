@@ -69,7 +69,8 @@ data class Goals(
     val calories: Int = 2500,
     val protein: Int = 165,
     val carbs: Int = 250,
-    val fat: Int = 80
+    val fat: Int = 80,
+    val waterMl: Int = 2500
 )
 
 /** Two-variable duotone palette stored as ARGB ints. */

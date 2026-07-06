@@ -76,13 +76,20 @@ fun InputScreen(controller: RawTrackerController) {
     }
 
     val picker = rememberFoodPicker(onBytes = { controller.attachImage(it) })
+    val composerFocus = remember { FocusRequester() }
+    val dictation = rememberDictationLauncher(
+        onResult = {
+            controller.appendDictation(it)
+            runCatching { composerFocus.requestFocus() }
+        },
+        onError = controller::showMessage
+    )
 
     val cameraRequest by controller.cameraRequest.collectAsState()
     LaunchedEffect(cameraRequest) {
         if (cameraRequest > 0) picker.launchCamera()
     }
 
-    val composerFocus = remember { FocusRequester() }
     val focusSignal by controller.focusInput.collectAsState()
     LaunchedEffect(focusSignal) {
         if (focusSignal > 0) runCatching { composerFocus.requestFocus() }
@@ -232,6 +239,7 @@ fun InputScreen(controller: RawTrackerController) {
                 value = ui.input,
                 onValueChange = controller::onInputChange,
                 onAdd = { controller.openAddChooser() },
+                onDictate = { dictation.launch() },
                 onSend = doSend,
                 isParsing = ui.isParsing,
                 focusRequester = composerFocus
@@ -454,6 +462,7 @@ private fun InputBar(
     value: String,
     onValueChange: (String) -> Unit,
     onAdd: () -> Unit,
+    onDictate: () -> Unit,
     onSend: () -> Unit,
     isParsing: Boolean,
     focusRequester: FocusRequester
@@ -478,6 +487,12 @@ private fun InputBar(
             imeAction = ImeAction.Default,
             onImeAction = { if (!isParsing) onSend() },
             focusRequester = focusRequester
+        )
+        BrutalIconButton(
+            icon = RawIcons.microphone,
+            contentDescription = strings.dictate,
+            onClick = onDictate,
+            boxSize = composerHeight
         )
         BrutalIconButton(
             icon = RawIcons.send,

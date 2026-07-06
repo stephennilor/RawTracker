@@ -44,6 +44,12 @@ interface AppStrings {
     val camera: String
     val pickPhoto: String
     val foodPlaceholder: String
+    val dictate: String
+    val dictationPrompt: String
+    val dictationNoSpeech: String
+    val dictationUnavailable: String
+    val dictationPermissionDenied: String
+    val dictationUseKeyboardMic: String
     val send: String
     val editEntry: String
     val reviewAndSave: String
@@ -178,6 +184,12 @@ object EnglishStrings : AppStrings {
     override val camera = "Camera"
     override val pickPhoto = "Pick photo"
     override val foodPlaceholder = "food..."
+    override val dictate = "Dictate"
+    override val dictationPrompt = "Say what you ate"
+    override val dictationNoSpeech = "I didn't catch anything. Tap the mic and try again."
+    override val dictationUnavailable = "Dictation isn't available on this device."
+    override val dictationPermissionDenied = "Microphone permission was denied. Enable it in system settings to dictate meals."
+    override val dictationUseKeyboardMic = "Use the keyboard mic on iOS to dictate into the food field."
     override val send = "Send"
     override val editEntry = "EDIT ENTRY"
     override val reviewAndSave = "REVIEW & SAVE"
@@ -325,6 +337,12 @@ object PolishStrings : AppStrings {
     override val camera = "Aparat"
     override val pickPhoto = "Wybierz zdjęcie"
     override val foodPlaceholder = "jedzenie..."
+    override val dictate = "Dyktuj"
+    override val dictationPrompt = "Powiedz, co zjadłeś"
+    override val dictationNoSpeech = "Nic nie usłyszałem. Dotknij mikrofonu i spróbuj ponownie."
+    override val dictationUnavailable = "Dyktowanie nie jest dostępne na tym urządzeniu."
+    override val dictationPermissionDenied = "Odmówiono dostępu do mikrofonu. Włącz go w ustawieniach systemu, aby dyktować posiłki."
+    override val dictationUseKeyboardMic = "Na iOS użyj mikrofonu klawiatury, aby dyktować w polu jedzenia."
     override val send = "Wyślij"
     override val editEntry = "EDYTUJ WPIS"
     override val reviewAndSave = "SPRAWDŹ I ZAPISZ"

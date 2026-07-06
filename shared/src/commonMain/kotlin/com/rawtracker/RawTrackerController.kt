@@ -210,6 +210,16 @@ class RawTrackerController(
             .toInstant(tz).toEpochMilliseconds()
     }
     fun onInputChange(text: String) = _ui.update { it.copy(input = text) }
+    fun appendDictation(text: String) = _ui.update {
+        val spoken = text.trim()
+        if (spoken.isBlank()) it else {
+            val prefix = it.input.trimEnd()
+            it.copy(input = if (prefix.isBlank()) spoken else "$prefix $spoken")
+        }
+    }
+
+    fun showMessage(message: String) = _ui.update { it.copy(message = message) }
+
     fun attachImage(bytes: ByteArray) {
         _ui.update { it.copy(attachedImage = bytes) }
         if (focusAfterPhoto) {

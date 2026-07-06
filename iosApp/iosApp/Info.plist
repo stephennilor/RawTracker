@@ -37,6 +37,10 @@
 	<string>RawTracker reads photos you pick so it can estimate the macros of your meal.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>RawTracker can save meal photos you capture.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>RawTracker uses the microphone when you dictate meal descriptions.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>RawTracker can turn dictated meal descriptions into text.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>RawTracker writes the calories, macros, and water you log to Apple Health.</string>
 	<key>NSHealthShareUsageDescription</key>

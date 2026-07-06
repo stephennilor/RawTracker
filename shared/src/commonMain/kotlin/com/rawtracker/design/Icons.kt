@@ -14,6 +14,7 @@ import com.adamglin.phosphoricons.fill.Drop
 import com.adamglin.phosphoricons.fill.ForkKnife
 import com.adamglin.phosphoricons.fill.Gear
 import com.adamglin.phosphoricons.fill.Image
+import com.adamglin.phosphoricons.fill.Microphone
 import com.adamglin.phosphoricons.fill.Minus
 import com.adamglin.phosphoricons.fill.PaperPlaneRight
 import com.adamglin.phosphoricons.fill.Plus
@@ -24,6 +25,7 @@ import com.adamglin.phosphoricons.fill.X
 object RawIcons {
     val camera: ImageVector get() = PhosphorIcons.Fill.Camera
     val gallery: ImageVector get() = PhosphorIcons.Fill.Image
+    val microphone: ImageVector get() = PhosphorIcons.Fill.Microphone
     val send: ImageVector get() = PhosphorIcons.Fill.PaperPlaneRight
     val plus: ImageVector get() = PhosphorIcons.Fill.Plus
     val settings: ImageVector get() = PhosphorIcons.Fill.Gear

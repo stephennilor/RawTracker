@@ -149,6 +149,9 @@ interface AppStrings {
     val cancelled: String
     val updated: String
     val logged: String
+    val targetsSaved: String
+    val coloursSaved: String
+    val widgetUpdated: String
     val clearedBuiltInKey: String
     val apiKeySaved: String
     val exportFailed: String
@@ -279,6 +282,9 @@ object EnglishStrings : AppStrings {
     override val cancelled = "Cancelled."
     override val updated = "Updated."
     override val logged = "Logged."
+    override val targetsSaved = "Targets saved."
+    override val coloursSaved = "Colours saved."
+    override val widgetUpdated = "Widget settings updated."
     override val clearedBuiltInKey = "Cleared - using built-in key."
     override val apiKeySaved = "API key saved."
     override val exportFailed = "Export failed"
@@ -440,6 +446,9 @@ object PolishStrings : AppStrings {
     override val cancelled = "Anulowano."
     override val updated = "Zaktualizowano."
     override val logged = "Zapisano."
+    override val targetsSaved = "Cele zapisane."
+    override val coloursSaved = "Kolory zapisane."
+    override val widgetUpdated = "Ustawienia widżetu zapisane."
     override val clearedBuiltInKey = "Wyczyszczono - używam klucza wbudowanego."
     override val apiKeySaved = "Klucz API zapisany."
     override val exportFailed = "Eksport nie powiódł się"

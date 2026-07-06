@@ -352,26 +352,35 @@ class RawTrackerController(
         container.onDataChanged()
     }
 
-    fun saveGoals(goals: Goals) = scope.launch {
-        repo.saveGoals(goals)
-        container.onDataChanged()
+    fun saveGoals(goals: Goals) {
+        _ui.update { it.copy(message = strings.targetsSaved) }
+        scope.launch {
+            repo.saveGoals(goals)
+            container.onDataChanged()
+        }
     }
 
-    fun saveDuotone(prefs: DuotonePrefs) = scope.launch {
-        repo.saveDuotone(prefs)
-        container.onDataChanged()
+    fun saveDuotone(prefs: DuotonePrefs) {
+        _ui.update { it.copy(message = strings.coloursSaved) }
+        scope.launch {
+            repo.saveDuotone(prefs)
+            container.onDataChanged()
+        }
     }
 
-    fun saveWidgetPrefs(prefs: WidgetPrefs) = scope.launch {
-        repo.saveWidgetPrefs(prefs)
-        container.onDataChanged()
+    fun saveWidgetPrefs(prefs: WidgetPrefs) {
+        _ui.update { it.copy(message = strings.widgetUpdated) }
+        scope.launch {
+            repo.saveWidgetPrefs(prefs)
+            container.onDataChanged()
+        }
     }
 
-    fun saveApiKey(key: String) = scope.launch {
-        repo.saveApiKey(key)
+    fun saveApiKey(key: String) {
         _ui.update {
             it.copy(message = if (key.isBlank()) strings.clearedBuiltInKey else strings.apiKeySaved)
         }
+        scope.launch { repo.saveApiKey(key) }
     }
 
     fun exportCsv() = scope.launch {

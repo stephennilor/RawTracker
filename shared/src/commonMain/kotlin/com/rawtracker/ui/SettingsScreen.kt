@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
 import com.rawtracker.design.inkBorder
 import com.rawtracker.i18n.strings
+import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 private fun Color.toArgbLong(): Long = 0xFF000000L or (toArgb().toLong() and 0xFFFFFFL)
@@ -90,6 +92,7 @@ fun SettingsScreen(
 ) {
     val goals by controller.goals.collectAsState()
     val apiKey by controller.apiKey.collectAsState()
+    val ui by controller.ui.collectAsState()
     val ink = RawColors.ink
 
     var cal by remember(goals) { mutableStateOf(goals.calories.toString()) }
@@ -98,6 +101,25 @@ fun SettingsScreen(
     var fat by remember(goals) { mutableStateOf(goals.fat.toString()) }
     var water by remember(goals) { mutableStateOf(goals.waterMl.toString()) }
     var keyInput by remember(apiKey) { mutableStateOf(apiKey) }
+    var settingsMessage by remember { mutableStateOf<String?>(null) }
+    var settingsMessageTick by remember { mutableStateOf(0) }
+    fun showSettingsMessage(message: String) {
+        settingsMessage = message
+        settingsMessageTick += 1
+    }
+
+    LaunchedEffect(ui.message) {
+        if (ui.message != null) {
+            delay(2600)
+            controller.clearMessage()
+        }
+    }
+    LaunchedEffect(settingsMessageTick) {
+        if (settingsMessage != null) {
+            delay(2600)
+            settingsMessage = null
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -122,6 +144,14 @@ fun SettingsScreen(
                 boxSize = 40.dp
             )
         }
+        (settingsMessage ?: ui.message)?.let { msg ->
+            MonoText(
+                text = msg,
+                color = ink,
+                weight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+            )
+        }
 
         EditorialSectionLabel(strings.dailyTargets)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -139,6 +169,7 @@ fun SettingsScreen(
         BrutalButton(
             strings.saveTargets,
             {
+                showSettingsMessage(strings.targetsSaved)
                 controller.saveGoals(
                     Goals(
                         calories = cal.toIntOrNull() ?: 2500,
@@ -219,7 +250,15 @@ fun SettingsScreen(
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BrutalButton(strings.applyColours, onApplyPreview, Modifier.weight(1f), filled = true)
+            BrutalButton(
+                strings.applyColours,
+                {
+                    showSettingsMessage(strings.coloursSaved)
+                    onApplyPreview()
+                },
+                Modifier.weight(1f),
+                filled = true
+            )
             BrutalButton(strings.discardColours, onDiscardPreview, Modifier.weight(1f), filled = false)
         }
 
@@ -233,21 +272,24 @@ fun SettingsScreen(
         )
         val widgetPrefs by controller.widgetPrefs.collectAsState()
         ToggleRow(strings.calorieGoal, widgetPrefs.showGoal) {
+            showSettingsMessage(strings.widgetUpdated)
             controller.saveWidgetPrefs(widgetPrefs.copy(showGoal = it))
         }
         ToggleRow(strings.macrosPcf, widgetPrefs.showMacros) {
+            showSettingsMessage(strings.widgetUpdated)
             controller.saveWidgetPrefs(widgetPrefs.copy(showMacros = it))
         }
         ToggleRow(strings.foodButton, widgetPrefs.showFood) {
+            showSettingsMessage(strings.widgetUpdated)
             controller.saveWidgetPrefs(widgetPrefs.copy(showFood = it))
         }
         ToggleRow(strings.waterButton, widgetPrefs.showWater) {
+            showSettingsMessage(strings.widgetUpdated)
             controller.saveWidgetPrefs(widgetPrefs.copy(showWater = it))
         }
 
         Spacer(Modifier.height(24.dp))
         EditorialSectionLabel(strings.healthSync)
-        val ui by controller.ui.collectAsState()
         MonoText(
             if (ui.healthConnected) strings.healthConnectedHelp
             else strings.healthWriteOnlyHelp,
@@ -291,10 +333,21 @@ fun SettingsScreen(
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BrutalButton(strings.saveKey, { controller.saveApiKey(keyInput) }, Modifier.weight(1f))
+            BrutalButton(
+                strings.saveKey,
+                {
+                    showSettingsMessage(if (keyInput.isBlank()) strings.clearedBuiltInKey else strings.apiKeySaved)
+                    controller.saveApiKey(keyInput)
+                },
+                Modifier.weight(1f)
+            )
             BrutalButton(
                 strings.clear,
-                { keyInput = ""; controller.saveApiKey("") },
+                {
+                    keyInput = ""
+                    showSettingsMessage(strings.clearedBuiltInKey)
+                    controller.saveApiKey("")
+                },
                 Modifier.weight(1f),
                 filled = false
             )

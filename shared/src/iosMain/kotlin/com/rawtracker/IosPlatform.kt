@@ -171,15 +171,17 @@ class IosHealthSync : HealthSync {
         val ml = HKUnit.unitFromString("mL")
         val samples = buildList {
             meals.forEach { m ->
-                val date = NSDate.dateWithTimeIntervalSince1970(m.atEpochMillis / 1000.0)
-                energyType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(kcal, m.calories.toDouble()), date, date)) }
-                proteinType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.proteinG.toDouble()), date, date)) }
-                carbsType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.carbsG.toDouble()), date, date)) }
-                fatType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.fatG.toDouble()), date, date)) }
+                val start = NSDate.dateWithTimeIntervalSince1970(m.atEpochMillis / 1000.0)
+                val end = NSDate.dateWithTimeIntervalSince1970((m.endEpochMillis ?: m.atEpochMillis) / 1000.0)
+                energyType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(kcal, m.calories.toDouble()), start, end)) }
+                proteinType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.proteinG.toDouble()), start, end)) }
+                carbsType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.carbsG.toDouble()), start, end)) }
+                fatType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(gram, m.fatG.toDouble()), start, end)) }
             }
             waters.forEach { w ->
-                val date = NSDate.dateWithTimeIntervalSince1970(w.atEpochMillis / 1000.0)
-                waterType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(ml, w.milliliters.toDouble()), date, date)) }
+                val start = NSDate.dateWithTimeIntervalSince1970(w.atEpochMillis / 1000.0)
+                val end = NSDate.dateWithTimeIntervalSince1970((w.endEpochMillis ?: w.atEpochMillis) / 1000.0)
+                waterType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(ml, w.milliliters.toDouble()), start, end)) }
             }
         }
         return if (save(samples)) HealthSyncResult.Synced else HealthSyncResult.failed("save")

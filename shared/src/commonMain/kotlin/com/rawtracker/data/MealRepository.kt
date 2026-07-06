@@ -59,7 +59,14 @@ class MealRepository(
         val waters = q.waterBetween(start, end) { id, milliliters, loggedAt ->
             HealthWater(milliliters.toInt(), loggedAt, waterClientId(id))
         }.executeAsList()
-        val result = runCatching { healthSync.reconcileDay(start, end, meals, waters) }
+        val result = runCatching {
+            healthSync.reconcileDay(
+                start,
+                end,
+                dailyHealthMeals(start, end, meals),
+                dailyHealthWaters(start, end, waters)
+            )
+        }
             .getOrElse { HealthSyncResult.failed() }
         if (result.synced) runCatching { q.markSyncedBetween(start, end) }
         return result

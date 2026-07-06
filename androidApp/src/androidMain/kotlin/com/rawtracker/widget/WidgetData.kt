@@ -4,6 +4,8 @@ import android.content.Context
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.rawtracker.data.HealthMeal
 import com.rawtracker.data.HealthWater
+import com.rawtracker.data.dailyHealthMeals
+import com.rawtracker.data.dailyHealthWaters
 import com.rawtracker.db.RawTrackerDb
 import java.time.LocalDate
 import java.time.ZoneId
@@ -89,7 +91,7 @@ object WidgetData {
             val waters = q.waterBetween(start, end) { id, ml, loggedAt ->
                 HealthWater(ml.toInt(), loggedAt, "rawtracker_water_$id")
             }.executeAsList()
-            meals to waters
+            dailyHealthMeals(start, end, meals) to dailyHealthWaters(start, end, waters)
         } finally {
             driver.close()
         }

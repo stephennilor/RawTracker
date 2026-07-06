@@ -38,16 +38,46 @@ data class HealthMeal(
     val carbsG: Int,
     val fatG: Int,
     val atEpochMillis: Long,
-    /** Stable id (e.g. "rawtracker_meal_42") used for idempotent upserts. */
-    val clientId: String
+    /** Stable id used for idempotent upserts. */
+    val clientId: String,
+    val endEpochMillis: Long? = null
 )
 
 /** A glass of water exactly as it should appear in the native health hub. */
 data class HealthWater(
     val milliliters: Int,
     val atEpochMillis: Long,
-    val clientId: String
+    val clientId: String,
+    val endEpochMillis: Long? = null
 )
+
+fun dailyHealthMeals(dayStartMillis: Long, dayEndMillis: Long, meals: List<HealthMeal>): List<HealthMeal> {
+    if (meals.isEmpty()) return emptyList()
+    return listOf(
+        HealthMeal(
+            foodName = "RawTracker daily total",
+            calories = meals.sumOf { it.calories },
+            proteinG = meals.sumOf { it.proteinG },
+            carbsG = meals.sumOf { it.carbsG },
+            fatG = meals.sumOf { it.fatG },
+            atEpochMillis = dayStartMillis,
+            clientId = "rawtracker_nutrition_day_$dayStartMillis",
+            endEpochMillis = dayEndMillis
+        )
+    )
+}
+
+fun dailyHealthWaters(dayStartMillis: Long, dayEndMillis: Long, waters: List<HealthWater>): List<HealthWater> {
+    if (waters.isEmpty()) return emptyList()
+    return listOf(
+        HealthWater(
+            milliliters = waters.sumOf { it.milliliters },
+            atEpochMillis = dayStartMillis,
+            clientId = "rawtracker_hydration_day_$dayStartMillis",
+            endEpochMillis = dayEndMillis
+        )
+    )
+}
 
 enum class HealthSyncStatus {
     Synced,

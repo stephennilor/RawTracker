@@ -95,8 +95,14 @@ class MealRepositoryTest {
         assertEquals(56, totals.carbs)
         assertEquals(20, totals.fat)
 
-        // Both of today's meals were pushed to the health hub on the last reconcile.
-        assertEquals(2, health.lastMeals.size)
+        // Health hubs get one cumulative daily record, so their day total cannot look like
+        // only the most recent meal.
+        assertEquals(1, health.lastMeals.size)
+        assertEquals(500, health.lastMeals.single().calories)
+        assertEquals(28, health.lastMeals.single().proteinG)
+        assertEquals(56, health.lastMeals.single().carbsG)
+        assertEquals(20, health.lastMeals.single().fatG)
+        assertEquals("RawTracker daily total", health.lastMeals.single().foodName)
         assertEquals(2, health.calls.size)
         assertTrue(repo.observeTodayMeals().first().all { it.syncedHealth })
     }
@@ -107,7 +113,6 @@ class MealRepositoryTest {
         assertEquals(1, health.lastMeals.size)
 
         repo.updateMeal(id, ParsedFood("Big Toast", 400, 12, 50, 18), now())
-        assertEquals("Big Toast", health.lastMeals.single().foodName)
         assertEquals(400, health.lastMeals.single().calories)
 
         repo.updateMealTime(id, now())

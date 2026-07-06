@@ -140,13 +140,14 @@ class AndroidHealthSync(private val context: Context) : HealthSync {
 
     private fun nutritionRecord(m: HealthMeal): NutritionRecord {
         val start = Instant.ofEpochMilli(m.atEpochMillis)
-        val end = start.plusSeconds(1)
+        val end = Instant.ofEpochMilli(m.endEpochMillis ?: (m.atEpochMillis + 1_000))
         val offset = ZoneId.systemDefault().rules.getOffset(start)
+        val endOffset = ZoneId.systemDefault().rules.getOffset(end)
         return NutritionRecord(
             startTime = start,
             startZoneOffset = offset,
             endTime = end,
-            endZoneOffset = offset,
+            endZoneOffset = endOffset,
             metadata = Metadata.manualEntry(clientRecordId = m.clientId),
             name = m.foodName,
             energy = Energy.kilocalories(m.calories.toDouble()),
@@ -158,13 +159,14 @@ class AndroidHealthSync(private val context: Context) : HealthSync {
 
     private fun hydrationRecord(w: HealthWater): HydrationRecord {
         val start = Instant.ofEpochMilli(w.atEpochMillis)
-        val end = start.plusSeconds(1)
+        val end = Instant.ofEpochMilli(w.endEpochMillis ?: (w.atEpochMillis + 1_000))
         val offset = ZoneId.systemDefault().rules.getOffset(start)
+        val endOffset = ZoneId.systemDefault().rules.getOffset(end)
         return HydrationRecord(
             startTime = start,
             startZoneOffset = offset,
             endTime = end,
-            endZoneOffset = offset,
+            endZoneOffset = endOffset,
             metadata = Metadata.manualEntry(clientRecordId = w.clientId),
             volume = Volume.milliliters(w.milliliters.toDouble())
         )

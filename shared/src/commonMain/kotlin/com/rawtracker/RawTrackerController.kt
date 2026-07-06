@@ -35,10 +35,12 @@ import kotlinx.datetime.toLocalDateTime
 
 enum class Screen { Input, Settings }
 
+private const val MAX_ATTACHED_IMAGES = 4
+
 data class UiState(
     val screen: Screen = Screen.Input,
     val input: String = "",
-    val attachedImage: ByteArray? = null,
+    val attachedImages: List<ByteArray> = emptyList(),
     val isParsing: Boolean = false,
     val draft: ParsedFood? = null,
     val draftTimestamp: Long = 0L,
@@ -99,6 +101,9 @@ class RawTrackerController(
     /** Signal from deep links (camera widget) to launch the camera once. */
     val cameraRequest: StateFlow<Int> = container.cameraRequest
 
+    private val _galleryRequest = MutableStateFlow(0)
+    val galleryRequest: StateFlow<Int> = _galleryRequest.asStateFlow()
+
     /** Bumped to request that the input composer take focus (and raise the keyboard). */
     private val _focusInput = MutableStateFlow(0)
     val focusInput: StateFlow<Int> = _focusInput.asStateFlow()
@@ -147,11 +152,24 @@ class RawTrackerController(
         container.cameraRequest.value += 1
     }
 
+    /** Gallery entry: close the chooser and open the multi-select photo picker. */
+    fun chooseGallery() {
+        _ui.update { it.copy(showAddChooser = false) }
+        _galleryRequest.update { it + 1 }
+    }
+
     /** Photo + text: open the camera, then focus the composer once the shot is attached. */
     fun choosePhotoAndDescribe() {
         focusAfterPhoto = true
         _ui.update { it.copy(showAddChooser = false) }
         container.cameraRequest.value += 1
+    }
+
+    /** Gallery + text: open multi-select, then focus the composer once photos are attached. */
+    fun chooseGalleryAndDescribe() {
+        focusAfterPhoto = true
+        _ui.update { it.copy(showAddChooser = false) }
+        _galleryRequest.update { it + 1 }
     }
 
     fun connectHealth() = scope.launch {
@@ -220,14 +238,17 @@ class RawTrackerController(
 
     fun showMessage(message: String) = _ui.update { it.copy(message = message) }
 
-    fun attachImage(bytes: ByteArray) {
-        _ui.update { it.copy(attachedImage = bytes) }
+    fun attachImage(bytes: ByteArray) = attachImages(listOf(bytes))
+
+    fun attachImages(bytes: List<ByteArray>) {
+        if (bytes.isEmpty()) return
+        _ui.update { it.copy(attachedImages = (it.attachedImages + bytes).takeLast(MAX_ATTACHED_IMAGES)) }
         if (focusAfterPhoto) {
             focusAfterPhoto = false
             _focusInput.update { it + 1 }
         }
     }
-    fun clearAttachment() = _ui.update { it.copy(attachedImage = null) }
+    fun clearAttachment() = _ui.update { it.copy(attachedImages = emptyList()) }
     fun dismissSheet() = _ui.update { it.copy(draft = null, draftImagePath = null, editingMealId = null) }
     fun clearMessage() = _ui.update { it.copy(message = null) }
 
@@ -244,16 +265,16 @@ class RawTrackerController(
     fun submit() {
         val state = _ui.value
         val text = state.input.trim().ifBlank { null }
-        val image = state.attachedImage
-        if (text == null && image == null) return
+        val images = state.attachedImages
+        if (text == null && images.isEmpty()) return
 
         if (!container.connectivity.isOnline()) {
             scope.launch {
-                val path = image?.let { repo.saveImageBytes(it) }
+                val path = images.firstOrNull()?.let { repo.saveImageBytes(it) }
                 repo.enqueuePending(text, path)
                 refreshPendingCount()
                 _ui.update {
-                    it.copy(input = "", attachedImage = null, message = strings.offlineQueued)
+                    it.copy(input = "", attachedImages = emptyList(), message = strings.offlineQueued)
                 }
             }
             return
@@ -261,16 +282,16 @@ class RawTrackerController(
 
         _ui.update { it.copy(isParsing = true, message = null) }
         parseJob = scope.launch {
-            val result = container.gemini.parse(text, image)
+            val result = container.gemini.parse(text, images)
             if (!isActive) return@launch
             result.fold(
                 onSuccess = { food ->
-                    val imagePath = image?.let { repo.saveImageBytes(it) }
+                    val imagePath = images.firstOrNull()?.let { repo.saveImageBytes(it) }
                     _ui.update {
                         it.copy(
                             isParsing = false,
                             input = "",
-                            attachedImage = null,
+                            attachedImages = emptyList(),
                             draft = food,
                             draftTimestamp = timestampOnSelectedDay(),
                             draftImagePath = imagePath

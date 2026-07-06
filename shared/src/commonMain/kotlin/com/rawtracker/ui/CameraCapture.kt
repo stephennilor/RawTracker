@@ -12,22 +12,25 @@ import io.github.ismoy.imagepickerkmp.features.imagepicker.ui.rememberImagePicke
  * Wraps ImagePickerKMP so the rest of the app only deals with raw [ByteArray] photos.
  */
 @Composable
-fun rememberFoodPicker(onBytes: (ByteArray) -> Unit): FoodPicker {
+fun rememberFoodPicker(onImages: (List<ByteArray>) -> Unit): FoodPicker {
     val picker = rememberImagePickerKMP(config = ImagePickerKMPConfig())
     val handled = remember { mutableSetOf<Int>() }
     val result = picker.result
     LaunchedEffect(result) {
         if (result is ImagePickerResult.Success) {
-            val photo = result.first
-            if (photo != null && handled.add(photo.hashCode())) {
-                runCatching { photo.loadBytes() }.getOrNull()?.let(onBytes)
+            val photos = result.photos
+            if (photos.isNotEmpty() && handled.add(result.hashCode())) {
+                val bytes = photos.mapNotNull { photo ->
+                    runCatching { photo.loadBytes() }.getOrNull()
+                }
+                if (bytes.isNotEmpty()) onImages(bytes)
             }
         }
     }
     return remember(picker) {
         FoodPicker(
             launchCamera = { picker.launchCamera() },
-            launchGallery = { picker.launchGallery() }
+            launchGallery = { picker.launchGallery(allowMultiple = true, selectionLimit = 4) }
         )
     }
 }

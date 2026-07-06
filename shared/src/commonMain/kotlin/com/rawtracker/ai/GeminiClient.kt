@@ -65,7 +65,10 @@ private const val SYSTEM_PROMPT =
         "image / single serving. Set `portion_multiplier` to 1 unless the user explicitly states a " +
         "multiplier (e.g. \"two plates\", \"x2\"). Never inflate the per-item baseline to fake a " +
         "multiplier; apply the multiplier only as the final arithmetic step.\n" +
-        "7. SANITY CHECK before finalizing:\n" +
+        "7. MULTIPLE PHOTOS: If several images are provided, treat them as multiple views or close-ups " +
+        "of the same meal unless the user's text explicitly says they are separate servings. Do not add " +
+        "the same visible food twice just because it appears in more than one photo.\n" +
+        "8. SANITY CHECK before finalizing:\n" +
         "   - PROTEIN: ~100g of protein requires ~450g of dense meat or ~16 large eggs. If a single " +
         "serving exceeds ~50g protein, verify the image plausibly holds that much meat; if not, " +
         "reduce it.\n" +
@@ -90,7 +93,10 @@ class GeminiClient(
      * Parses food from optional text and/or image bytes into structured macros.
      * Returns a failure (without throwing) on any network or parsing error.
      */
-    suspend fun parse(text: String?, imageBytes: ByteArray?): Result<ParsedFood> = try {
+    suspend fun parse(text: String?, imageBytes: ByteArray?): Result<ParsedFood> =
+        parse(text, listOfNotNull(imageBytes))
+
+    suspend fun parse(text: String?, imageBytes: List<ByteArray>): Result<ParsedFood> = try {
         Result.success(parseOrThrow(text, imageBytes))
     } catch (err: CancellationException) {
         throw err
@@ -98,10 +104,10 @@ class GeminiClient(
         Result.failure(IllegalStateException(explainGeminiFailure(err), err))
     }
 
-    private suspend fun parseOrThrow(text: String?, imageBytes: ByteArray?): ParsedFood {
+    private suspend fun parseOrThrow(text: String?, imageBytes: List<ByteArray>): ParsedFood {
         val apiKey = apiKeyProvider()
         require(apiKey.isNotBlank()) { "Missing GEMINI_API_KEY (add your key in Settings)" }
-        require(!text.isNullOrBlank() || imageBytes != null) { "Provide text or an image" }
+        require(!text.isNullOrBlank() || imageBytes.isNotEmpty()) { "Provide text or an image" }
 
         val request = buildRequest(text, imageBytes)
         val rawBody = postWithModelFallback(apiKey, request)
@@ -117,7 +123,7 @@ class GeminiClient(
         } catch (err: SerializationException) {
             throw GeminiResponseException(GeminiResponseFailure.MACROS, err)
         }
-        return parsed.withRealityCheck(text = text, hasImage = imageBytes != null)
+        return parsed.withRealityCheck(text = text, hasImage = imageBytes.isNotEmpty())
     }
 
     private suspend fun postWithModelFallback(apiKey: String, request: GeminiRequest): String {
@@ -173,11 +179,11 @@ class GeminiClient(
     }
 
     @OptIn(ExperimentalEncodingApi::class)
-    private fun buildRequest(text: String?, imageBytes: ByteArray?): GeminiRequest {
+    private fun buildRequest(text: String?, imageBytes: List<ByteArray>): GeminiRequest {
         val parts = buildList {
             if (!text.isNullOrBlank()) add(Part(text = text))
-            if (imageBytes != null) {
-                add(Part(inlineData = InlineData("image/jpeg", Base64.encode(imageBytes))))
+            imageBytes.forEach { bytes ->
+                add(Part(inlineData = InlineData("image/jpeg", Base64.encode(bytes))))
             }
             if (isEmpty()) add(Part(text = "Estimate the nutrition."))
         }

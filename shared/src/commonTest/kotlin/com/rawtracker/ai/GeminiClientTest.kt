@@ -356,4 +356,34 @@ class GeminiClientTest {
         assertContains(capturedBody, "inline_data")
         assertContains(capturedBody, "with photo")
     }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    @Test
+    fun sendsMultipleImageBytesAsInlineDataParts() = runTest {
+        val firstImage = byteArrayOf(1, 2, 3)
+        val secondImage = byteArrayOf(4, 5, 6)
+        var capturedBody = ""
+
+        val engine = MockEngine { request ->
+            capturedBody = request.body.toByteArray().decodeToString()
+            respond(
+                content = GEMINI_ENVELOPE,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val capturingClient = HttpClient(engine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true; encodeDefaults = false })
+            }
+        }
+
+        val result = GeminiClient("test-key", capturingClient)
+            .parse(text = "same meal from two angles", imageBytes = listOf(firstImage, secondImage))
+
+        assertTrue(result.isSuccess, "expected success, got ${result.exceptionOrNull()}")
+        assertContains(capturedBody, Base64.encode(firstImage))
+        assertContains(capturedBody, Base64.encode(secondImage))
+        assertEquals(2, Regex("inline_data").findAll(capturedBody).count())
+    }
 }

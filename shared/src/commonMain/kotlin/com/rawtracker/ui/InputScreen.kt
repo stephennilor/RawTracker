@@ -75,7 +75,7 @@ fun InputScreen(controller: RawTrackerController) {
         controller.submit()
     }
 
-    val picker = rememberFoodPicker(onBytes = { controller.attachImage(it) })
+    val picker = rememberFoodPicker(onImages = { controller.attachImages(it) })
     val composerFocus = remember { FocusRequester() }
     val dictation = rememberDictationLauncher(
         onResult = {
@@ -88,6 +88,11 @@ fun InputScreen(controller: RawTrackerController) {
     val cameraRequest by controller.cameraRequest.collectAsState()
     LaunchedEffect(cameraRequest) {
         if (cameraRequest > 0) picker.launchCamera()
+    }
+
+    val galleryRequest by controller.galleryRequest.collectAsState()
+    LaunchedEffect(galleryRequest) {
+        if (galleryRequest > 0) picker.launchGallery()
     }
 
     val focusSignal by controller.focusInput.collectAsState()
@@ -215,7 +220,7 @@ fun InputScreen(controller: RawTrackerController) {
                 )
             }
 
-            if (ui.attachedImage != null) {
+            if (ui.attachedImages.isNotEmpty()) {
                 Row(
                     modifier = Modifier.padding(bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -226,11 +231,11 @@ fun InputScreen(controller: RawTrackerController) {
                         contentAlignment = Alignment.Center
                     ) {
                         androidx.compose.material3.Icon(
-                            RawIcons.camera, contentDescription = null,
+                            RawIcons.gallery, contentDescription = null,
                             tint = RawColors.canvas, modifier = Modifier.size(20.dp)
                         )
                     }
-                    MonoText(strings.photoAttached, size = 13.sp)
+                    MonoText(strings.photosAttached(ui.attachedImages.size), size = 13.sp)
                     BrutalIconButton(RawIcons.close, strings.removePhoto, { controller.clearAttachment() }, boxSize = 32.dp)
                 }
             }
@@ -257,7 +262,9 @@ fun InputScreen(controller: RawTrackerController) {
             AddFoodChooser(
                 onDescribe = { controller.chooseDescribe() },
                 onPhoto = { controller.choosePhoto() },
+                onGallery = { controller.chooseGallery() },
                 onPhotoAndDescribe = { controller.choosePhotoAndDescribe() },
+                onGalleryAndDescribe = { controller.chooseGalleryAndDescribe() },
                 onWater = {
                     controller.dismissAddChooser()
                     controller.openWaterSheet()
@@ -296,7 +303,9 @@ private fun String.isErrorMessage(): Boolean =
 private fun AddFoodChooser(
     onDescribe: () -> Unit,
     onPhoto: () -> Unit,
+    onGallery: () -> Unit,
     onPhotoAndDescribe: () -> Unit,
+    onGalleryAndDescribe: () -> Unit,
     onWater: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -319,9 +328,13 @@ private fun AddFoodChooser(
             Spacer(Modifier.height(14.dp))
             BrutalButton(strings.describe, onDescribe, Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
-            BrutalButton(strings.photo, onPhoto, Modifier.fillMaxWidth(), filled = false)
+            BrutalButton(strings.camera, onPhoto, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
-            BrutalButton(strings.photoAndDescribe, onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
+            BrutalButton(strings.pickPhotos, onGallery, Modifier.fillMaxWidth(), filled = false)
+            Spacer(Modifier.height(10.dp))
+            BrutalButton(strings.cameraAndDescribe, onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
+            Spacer(Modifier.height(10.dp))
+            BrutalButton(strings.photosAndDescribe, onGalleryAndDescribe, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
             BrutalButton(strings.logWater, onWater, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(8.dp))

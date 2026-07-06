@@ -34,6 +34,9 @@ interface AppStrings {
     val describe: String
     val photo: String
     val photoAndDescribe: String
+    val cameraAndDescribe: String
+    val pickPhotos: String
+    val photosAndDescribe: String
     val previousDay: String
     val nextDay: String
     val kcal: String
@@ -119,6 +122,7 @@ interface AppStrings {
     val done: String
 
     fun queued(count: Long): String = "$count $queuedSuffix"
+    fun photosAttached(count: Int): String
     fun waterToday(total: Int): String
     fun waterAmount(ml: Int): String
     fun waterLogged(ml: Int): String
@@ -178,6 +182,9 @@ object EnglishStrings : AppStrings {
     override val describe = "Describe"
     override val photo = "Photo"
     override val photoAndDescribe = "Photo + describe"
+    override val cameraAndDescribe = "Camera + describe"
+    override val pickPhotos = "Pick photo(s)"
+    override val photosAndDescribe = "Photo(s) + describe"
     override val previousDay = "Previous day"
     override val nextDay = "Next day"
     override val kcal = "KCAL"
@@ -292,6 +299,8 @@ object EnglishStrings : AppStrings {
     override val geminiServerGlitch = "Gemini hit a server glitch. Try again in a minute."
 
     override fun waterToday(total: Int) = "today: $total ml"
+    override fun photosAttached(count: Int) =
+        if (count == 1) "photo attached" else "$count photos attached"
     override fun waterAmount(ml: Int) = "$ml ml"
     override fun waterLogged(ml: Int) = "+$ml ml water"
     override fun mealMacros(calories: Int, protein: Int, carbs: Int, fat: Int) =
@@ -335,6 +344,9 @@ object PolishStrings : AppStrings {
     override val describe = "Opisz"
     override val photo = "Zdjęcie"
     override val photoAndDescribe = "Zdjęcie + opis"
+    override val cameraAndDescribe = "Aparat + opis"
+    override val pickPhotos = "Wybierz zdjęcia"
+    override val photosAndDescribe = "Zdjęcia + opis"
     override val previousDay = "Poprzedni dzień"
     override val nextDay = "Następny dzień"
     override val kcal = "KCAL"
@@ -449,6 +461,8 @@ object PolishStrings : AppStrings {
     override val geminiServerGlitch = "Gemini miało problem serwera. Spróbuj za minutę."
 
     override fun waterToday(total: Int) = "dziś: $total ml"
+    override fun photosAttached(count: Int) =
+        if (count == 1) "zdjęcie dodane" else "$count zdjęcia dodane"
     override fun waterAmount(ml: Int) = "$ml ml"
     override fun waterLogged(ml: Int) = "+$ml ml wody"
     override fun mealMacros(calories: Int, protein: Int, carbs: Int, fat: Int) =

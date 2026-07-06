@@ -68,6 +68,72 @@ class GeminiClientTest {
         assertEquals(46, food.protein_g)
         assertEquals(58, food.carbs_g)
         assertEquals(22, food.fat_g)
+        assertTrue(food.items.isEmpty())
+        assertTrue(food.plausibilityWarnings.isEmpty())
+    }
+
+    @Test
+    fun parsesItemBreakdownAndFlagsImplausibleProtein() = runTest {
+        val body = """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  { "text": "{\"items\":[{\"name\":\"Grilled chicken breast\",\"portion_grams\":420,\"calories\":690,\"protein_g\":112,\"carbs_g\":0,\"fat_g\":16}],\"portion_multiplier\":1,\"food_name\":\"Grilled Chicken\",\"calories\":690,\"protein_g\":112,\"carbs_g\":0,\"fat_g\":16}" }
+                ]
+              }
+            }
+          ]
+        }
+        """
+        val client = GeminiClient(apiKey = "test-key", httpClient = mockClient(body = body))
+
+        val result = client.parse(text = "grilled chicken meal", imageBytes = null)
+
+        assertTrue(result.isSuccess, "expected success, got ${result.exceptionOrNull()}")
+        val food = result.getOrThrow()
+        assertEquals(1, food.items.size)
+        assertEquals("Grilled chicken breast", food.items.first().name)
+        assertEquals(112, food.protein_g)
+        assertTrue(food.plausibilityWarnings.any { it.contains("Protein") })
+    }
+
+    @Test
+    fun fallsBackToLegacyModelWhenPrimaryModelIsUnavailable() = runTest {
+        val urls = mutableListOf<String>()
+        val engine = MockEngine { request ->
+            val url = request.url.toString()
+            urls += url
+            if (url.contains("gemini-3.1-flash-lite")) {
+                respond(
+                    content = """{"error":{"code":404,"message":"Model is not found.","status":"NOT_FOUND"}}""",
+                    status = HttpStatusCode.NotFound,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            } else {
+                respond(
+                    content = GEMINI_ENVELOPE,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+        }
+        val client = GeminiClient(
+            apiKey = "test-key",
+            httpClient = HttpClient(engine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true; encodeDefaults = false })
+                }
+            }
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+
+        assertTrue(result.isSuccess, "expected fallback success, got ${result.exceptionOrNull()}")
+        assertEquals(2, urls.size)
+        assertContains(urls[0], "gemini-3.1-flash-lite")
+        assertContains(urls[1], "gemini-2.5-flash")
     }
 
     @Test
@@ -77,7 +143,7 @@ class GeminiClientTest {
         val result = client.parse(text = "a banana", imageBytes = null)
 
         assertTrue(result.isFailure)
-        assertContains(result.exceptionOrNull()?.message ?: "", "GEMINI_API_KEY")
+        assertContains(result.exceptionOrNull()?.message ?: "", "Gemini API key")
     }
 
     @Test
@@ -102,7 +168,96 @@ class GeminiClientTest {
         val result = client.parse(text = "a sandwich", imageBytes = null)
 
         assertTrue(result.isFailure)
-        assertContains(result.exceptionOrNull()?.message ?: "", "API key is not valid")
+        assertContains(result.exceptionOrNull()?.message ?: "", "API key isn't accepted")
+    }
+
+    @Test
+    fun surfacesUnauthenticatedAsKeyProblem() = runTest {
+        val errorBody = """
+            {"error":{"code":401,"message":"Request had invalid authentication credentials.","status":"UNAUTHENTICATED"}}
+        """
+        val client = GeminiClient(
+            apiKey = "AQ.expired-style-token",
+            httpClient = mockClient(status = HttpStatusCode.Unauthorized, body = errorBody)
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "API key isn't accepted")
+    }
+
+    @Test
+    fun surfacesPermissionDeniedAsAccountProblem() = runTest {
+        val errorBody = """
+            {"error":{"code":403,"message":"Permission denied on resource.","status":"PERMISSION_DENIED"}}
+        """
+        val client = GeminiClient(
+            apiKey = "blocked-key",
+            httpClient = mockClient(status = HttpStatusCode.Forbidden, body = errorBody)
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "denied this API key")
+    }
+
+    @Test
+    fun surfacesRateLimitMessage() = runTest {
+        val errorBody = """
+            {"error":{"code":429,"message":"Resource exhausted. Please try again later.","status":"RESOURCE_EXHAUSTED"}}
+        """
+        val client = GeminiClient(
+            apiKey = "test-key",
+            httpClient = mockClient(status = HttpStatusCode.TooManyRequests, body = errorBody)
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "rate limit")
+        assertContains(message, "Google AI Studio")
+    }
+
+    @Test
+    fun surfacesServerBusyMessage() = runTest {
+        val errorBody = """
+            {"error":{"code":503,"message":"The model is overloaded. Please try again later.","status":"UNAVAILABLE"}}
+        """
+        val client = GeminiClient(
+            apiKey = "test-key",
+            httpClient = mockClient(status = HttpStatusCode.ServiceUnavailable, body = errorBody)
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "busy")
+    }
+
+    @Test
+    fun surfacesNetworkMessage() = runTest {
+        val engine = MockEngine { error("Unable to resolve host") }
+        val client = GeminiClient(
+            apiKey = "test-key",
+            httpClient = HttpClient(engine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true; encodeDefaults = false })
+                }
+            }
+        )
+
+        val result = client.parse(text = "a sandwich", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "Can't reach Gemini")
+        assertContains(message, "connection")
     }
 
     @Test
@@ -113,8 +268,37 @@ class GeminiClientTest {
         )
 
         val result = client.parse(text = "mystery food", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
 
         assertTrue(result.isFailure)
+        assertContains(message, "couldn't estimate")
+    }
+
+    @Test
+    fun surfacesGarbledMacroJsonMessage() = runTest {
+        val body = """
+        {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  { "text": "not valid json" }
+                ]
+              }
+            }
+          ]
+        }
+        """
+        val client = GeminiClient(
+            apiKey = "test-key",
+            httpClient = mockClient(body = body)
+        )
+
+        val result = client.parse(text = "mystery food", imageBytes = null)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+
+        assertTrue(result.isFailure)
+        assertContains(message, "garbled")
     }
 
     @Test
@@ -138,7 +322,7 @@ class GeminiClientTest {
         val message = result.exceptionOrNull()?.message.orEmpty()
 
         assertTrue(result.isFailure)
-        assertEquals("Gemini took too long to respond. Try again, or use a shorter prompt/photo.", message)
+        assertEquals("Gemini took too long. Try again with a shorter note or a smaller photo.", message)
         assertTrue(!message.contains("secret-key"))
         assertTrue(!message.contains("generativelanguage.googleapis.com"))
     }

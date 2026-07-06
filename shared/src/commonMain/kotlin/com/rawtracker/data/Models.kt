@@ -11,6 +11,19 @@ data class ParsedFood(
     val calories: Int,
     val protein_g: Int,
     val carbs_g: Int,
+    val fat_g: Int,
+    val items: List<ParsedFoodItem> = emptyList(),
+    val portion_multiplier: Double = 1.0,
+    @kotlinx.serialization.Transient val plausibilityWarnings: List<String> = emptyList()
+)
+
+@Serializable
+data class ParsedFoodItem(
+    val name: String,
+    val portion_grams: Int,
+    val calories: Int,
+    val protein_g: Int,
+    val carbs_g: Int,
     val fat_g: Int
 )
 

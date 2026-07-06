@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,6 +33,7 @@ import com.rawtracker.design.BrutalButton
 import com.rawtracker.design.BrutalTextField
 import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
+import com.rawtracker.design.inkBorder
 
 @Composable
 fun ParseSheet(controller: RawTrackerController) {
@@ -58,6 +61,7 @@ fun ParseSheet(controller: RawTrackerController) {
                 .fillMaxWidth()
                 .background(canvas, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
                 .clickable(enabled = false) {}
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
             Row(
@@ -85,6 +89,47 @@ fun ParseSheet(controller: RawTrackerController) {
                 NumberField("FAT", fat, { fat = it }, Modifier.weight(1f))
             }
             Spacer(Modifier.height(14.dp))
+
+            if (draft.plausibilityWarnings.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .inkBorder(ink)
+                        .padding(10.dp)
+                ) {
+                    MonoText("REALITY CHECK", weight = FontWeight.Bold, size = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                    draft.plausibilityWarnings.forEach { warning ->
+                        MonoText(warning, color = ink.copy(alpha = 0.76f), size = 12.sp)
+                        Spacer(Modifier.height(4.dp))
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
+
+            if (draft.items.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .inkBorder(ink)
+                        .padding(10.dp)
+                ) {
+                    MonoText("MODEL BREAKDOWN", weight = FontWeight.Bold, size = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                    draft.items.take(5).forEach { item ->
+                        MonoText(
+                            "${item.name} - ${item.portion_grams}g - ${item.calories}kcal P${item.protein_g} C${item.carbs_g} F${item.fat_g}",
+                            color = ink.copy(alpha = 0.76f),
+                            size = 12.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    if (draft.portion_multiplier != 1.0) {
+                        MonoText("x${draft.portion_multiplier} portion multiplier", color = ink.copy(alpha = 0.76f), size = 12.sp)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
 
             MonoText("TIME", weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))

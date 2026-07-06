@@ -78,6 +78,7 @@ interface AppStrings {
     val primaryInk: String
     val secondaryCanvas: String
     val randomiseShort: String
+    val hexCode: String
     val applyColours: String
     val discardColours: String
     val widget: String
@@ -221,6 +222,7 @@ object EnglishStrings : AppStrings {
     override val primaryInk = "PRIMARY / INK"
     override val secondaryCanvas = "SECONDARY / CANVAS"
     override val randomiseShort = "RND"
+    override val hexCode = "HEX"
     override val applyColours = "Set custom"
     override val discardColours = "Discard"
     override val widget = "WIDGET"
@@ -377,6 +379,7 @@ object PolishStrings : AppStrings {
     override val primaryInk = "PODSTAWOWY / TUSZ"
     override val secondaryCanvas = "DRUGI / TŁO"
     override val randomiseShort = "LOS"
+    override val hexCode = "HEX"
     override val applyColours = "Ustaw własne"
     override val discardColours = "Odrzuć"
     override val widget = "WIDŻET"

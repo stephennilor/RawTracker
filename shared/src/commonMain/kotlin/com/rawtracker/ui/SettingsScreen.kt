@@ -50,6 +50,25 @@ private fun Color.toArgbLong(): Long = 0xFF000000L or (toArgb().toLong() and 0xF
 private fun randomOpaqueColor(): Long =
     0xFF000000L or Random.nextInt(0x000000, 0x1000000).toLong()
 
+private fun Long.toHexRgb(): String =
+    "#" + (this and 0xFFFFFFL).toString(16).uppercase().padStart(6, '0')
+
+private fun parseHexRgb(value: String): Long? {
+    val hex = value.trim().removePrefix("#")
+    if (hex.length != 6 || hex.any { it !in '0'..'9' && it !in 'A'..'F' && it !in 'a'..'f' }) return null
+    return 0xFF000000L or hex.toLong(16)
+}
+
+private fun normaliseHexInput(value: String): String {
+    val hex = value
+        .trim()
+        .removePrefix("#")
+        .filter { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
+        .take(6)
+        .uppercase()
+    return "#$hex"
+}
+
 private data class Swatch(val canvas: Long, val ink: Long, val name: String)
 
 private val PRESETS = listOf(
@@ -147,6 +166,8 @@ fun SettingsScreen(
         val inkColor = Color(activeDuotone.ink)
         val canvasColor = Color(activeDuotone.canvas)
         val hasPreviewChanges = activeDuotone != savedDuotone
+        var inkHex by remember(activeDuotone.ink) { mutableStateOf(activeDuotone.ink.toHexRgb()) }
+        var canvasHex by remember(activeDuotone.canvas) { mutableStateOf(activeDuotone.canvas.toHexRgb()) }
         Row(
             Modifier.fillMaxWidth().padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -171,6 +192,13 @@ fun SettingsScreen(
         HsvColorPicker(inkColor) {
             onPreviewDuotone(activeDuotone.copy(ink = it.toArgbLong()))
         }
+        HexColourField(
+            value = inkHex,
+            onValueChange = { next ->
+                inkHex = next
+                parseHexRgb(next)?.let { onPreviewDuotone(activeDuotone.copy(ink = it)) }
+            }
+        )
         Spacer(Modifier.height(14.dp))
         ColorPickerHeader(strings.secondaryCanvas) {
             onPreviewDuotone(activeDuotone.copy(canvas = randomOpaqueColor()))
@@ -178,6 +206,13 @@ fun SettingsScreen(
         HsvColorPicker(canvasColor) {
             onPreviewDuotone(activeDuotone.copy(canvas = it.toArgbLong()))
         }
+        HexColourField(
+            value = canvasHex,
+            onValueChange = { next ->
+                canvasHex = next
+                parseHexRgb(next)?.let { onPreviewDuotone(activeDuotone.copy(canvas = it)) }
+            }
+        )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             BrutalButton(strings.applyColours, onApplyPreview, Modifier.weight(1f), filled = true)
@@ -295,6 +330,23 @@ private fun ColorPickerHeader(label: String, onRandomise: () -> Unit) {
             onRandomise,
             Modifier,
             filled = false
+        )
+    }
+}
+
+@Composable
+private fun HexColourField(value: String, onValueChange: (String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MonoText(strings.hexCode, weight = FontWeight.Bold, size = 11.sp)
+        BrutalTextField(
+            value = value,
+            onValueChange = { onValueChange(normaliseHexInput(it)) },
+            modifier = Modifier.weight(1f),
+            keyboardType = KeyboardType.Text
         )
     }
 }

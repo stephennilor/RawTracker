@@ -30,13 +30,13 @@ fun rawTypography(): Typography {
     val display = displayFamily()
     val mono = monoFamily()
     return Typography(
-        displayLarge = TextStyle(fontFamily = display, fontWeight = FontWeight.Bold, fontSize = 72.sp, lineHeight = 72.sp),
-        displayMedium = TextStyle(fontFamily = display, fontWeight = FontWeight.Bold, fontSize = 48.sp),
-        headlineMedium = TextStyle(fontFamily = display, fontWeight = FontWeight.SemiBold, fontSize = 28.sp),
+        displayLarge = TextStyle(fontFamily = display, fontWeight = FontWeight.Bold, fontSize = 72.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
+        displayMedium = TextStyle(fontFamily = display, fontWeight = FontWeight.Bold, fontSize = 48.sp, letterSpacing = (-0.5).sp),
+        headlineMedium = TextStyle(fontFamily = display, fontWeight = FontWeight.Bold, fontSize = 28.sp, letterSpacing = (-0.25).sp),
         titleLarge = TextStyle(fontFamily = display, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
         bodyLarge = TextStyle(fontFamily = mono, fontWeight = FontWeight.Normal, fontSize = 16.sp),
         bodyMedium = TextStyle(fontFamily = mono, fontWeight = FontWeight.Normal, fontSize = 14.sp),
-        labelMedium = TextStyle(fontFamily = mono, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 1.sp),
-        labelSmall = TextStyle(fontFamily = mono, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.5.sp)
+        labelMedium = TextStyle(fontFamily = mono, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp),
+        labelSmall = TextStyle(fontFamily = mono, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 2.5.sp)
     )
 }

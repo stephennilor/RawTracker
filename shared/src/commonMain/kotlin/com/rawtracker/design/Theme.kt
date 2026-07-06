@@ -1,6 +1,7 @@
 package com.rawtracker.design
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
@@ -38,9 +39,8 @@ fun RawTrackerTheme(prefs: DuotonePrefs, content: @Composable () -> Unit) {
     )
     CompositionLocalProvider(LocalDuotone provides colors) {
         MaterialTheme(colorScheme = scheme, typography = rawTypography()) {
-            androidx.compose.foundation.layout.Box(
-                Modifier.fillMaxSize().background(colors.canvas)
-            ) {
+            Box(Modifier.fillMaxSize().background(colors.canvas)) {
+                SoilpunkGrain(Modifier.fillMaxSize(), ink = colors.ink)
                 content()
             }
         }

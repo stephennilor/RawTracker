@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,13 +48,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
-/** The single elevation primitive: a hard 2px ink border with a strict 5px radius. */
+/** The single elevation primitive: hard ink border, tight radius for soilpunk edge. */
 fun Modifier.inkBorder(ink: Color, width: androidx.compose.ui.unit.Dp = 2.dp): Modifier =
-    this.border(width, ink, RoundedCornerShape(5.dp))
+    this.border(width, ink, RoundedCornerShape(4.dp))
 
 @Composable
 fun BrutalButton(
@@ -66,7 +68,7 @@ fun BrutalButton(
     val canvas = RawColors.canvas
     Box(
         modifier = modifier
-            .background(if (filled) ink else canvas, RoundedCornerShape(5.dp))
+            .background(if (filled) ink else canvas, RoundedCornerShape(4.dp))
             .inkBorder(ink)
             .clickable(onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 12.dp),
@@ -75,8 +77,10 @@ fun BrutalButton(
         Text(
             text = label.uppercase(),
             color = if (filled) canvas else ink,
+            fontFamily = monoFamily(),
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
+            letterSpacing = 2.sp,
+            fontSize = 12.sp
         )
     }
 }
@@ -95,7 +99,7 @@ fun BrutalIconButton(
     Box(
         modifier = modifier
             .size(boxSize)
-            .background(if (filled) ink else Color.Transparent, RoundedCornerShape(5.dp))
+            .background(if (filled) ink else Color.Transparent, RoundedCornerShape(4.dp))
             .inkBorder(ink)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
@@ -156,6 +160,7 @@ fun BrutalTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "",
+    minHeight: Dp = 48.dp,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -166,18 +171,11 @@ fun BrutalTextField(
     val fieldFocus = focusRequester ?: remember { FocusRequester() }
     Box(
         modifier = modifier
+            .heightIn(min = minHeight)
             .inkBorder(ink)
-            // Tapping anywhere in the field focuses it, like a messaging composer.
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { fieldFocus.requestFocus() }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        if (value.isEmpty() && placeholder.isNotEmpty()) {
-            MonoText(text = placeholder, color = ink.copy(alpha = 0.45f), size = 16.sp)
-        }
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -193,7 +191,18 @@ fun BrutalTextField(
                 onSend = { onImeAction?.invoke() },
                 onDone = { onImeAction?.invoke() },
                 onGo = { onImeAction?.invoke() }
-            )
+            ),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (value.isEmpty() && placeholder.isNotEmpty()) {
+                        MonoText(text = placeholder, color = ink.copy(alpha = 0.45f), size = 16.sp)
+                    }
+                    innerTextField()
+                }
+            }
         )
     }
 }

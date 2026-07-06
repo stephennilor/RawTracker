@@ -37,6 +37,7 @@ import com.rawtracker.design.BrutalButton
 import com.rawtracker.design.BrutalIconButton
 import com.rawtracker.design.BrutalTextField
 import com.rawtracker.design.HsvColorPicker
+import com.rawtracker.design.EditorialSectionLabel
 import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
@@ -83,7 +84,7 @@ fun SettingsScreen(controller: RawTrackerController) {
             BrutalIconButton(RawIcons.close, "Back", { controller.openInput() }, boxSize = 40.dp)
         }
 
-        SectionLabel("DAILY TARGETS")
+        EditorialSectionLabel("DAILY TARGETS")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             LabeledNumber("CALORIES", cal, { cal = it }, Modifier.weight(1f))
             LabeledNumber("PROTEIN", protein, { protein = it }, Modifier.weight(1f))
@@ -110,7 +111,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
 
         Spacer(Modifier.height(24.dp))
-        SectionLabel("DUOTONE")
+        EditorialSectionLabel("DUOTONE")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PRESETS.forEach { s ->
                 val selected = s.canvas == duotone.canvas && s.ink == duotone.ink
@@ -128,7 +129,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         }
 
         Spacer(Modifier.height(20.dp))
-        SectionLabel("CUSTOM COLOURS")
+        EditorialSectionLabel("CUSTOM COLOURS")
         var inkColor by remember(duotone.ink) { mutableStateOf(Color(duotone.ink)) }
         var canvasColor by remember(duotone.canvas) { mutableStateOf(Color(duotone.canvas)) }
         Row(
@@ -164,7 +165,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
 
         Spacer(Modifier.height(24.dp))
-        SectionLabel("WIDGET")
+        EditorialSectionLabel("WIDGET")
         MonoText(
             "// choose what the home-screen widget can show (size permitting)",
             color = ink.copy(alpha = 0.6f),
@@ -186,7 +187,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         }
 
         Spacer(Modifier.height(24.dp))
-        SectionLabel("HEALTH SYNC")
+        EditorialSectionLabel("HEALTH SYNC")
         val ui by controller.ui.collectAsState()
         MonoText(
             if (ui.healthConnected) "// connected \u2014 meals + water mirror to health"
@@ -214,7 +215,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         }
 
         Spacer(Modifier.height(24.dp))
-        SectionLabel("GEMINI API KEY")
+        EditorialSectionLabel("GEMINI API KEY")
         MonoText(
             if (apiKey.isBlank()) "// using built-in key \u2014 paste your own to use your quota"
             else "// custom key active (\u2022\u2022\u2022\u2022${apiKey.takeLast(4)})",
@@ -247,7 +248,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
 
         Spacer(Modifier.height(24.dp))
-        SectionLabel("DATA")
+        EditorialSectionLabel("DATA")
         BrutalButton("Export CSV", { controller.exportCsv() }, Modifier.fillMaxWidth(), filled = false)
 
         Spacer(Modifier.height(24.dp))
@@ -286,11 +287,6 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
             }
         }
     }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    MonoText(text, weight = FontWeight.Bold, size = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
 }
 
 @Composable

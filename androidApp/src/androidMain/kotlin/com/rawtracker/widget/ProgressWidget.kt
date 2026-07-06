@@ -2,7 +2,6 @@ package com.rawtracker.widget
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -29,20 +28,19 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.unit.ColorProvider
-import com.rawtracker.MainActivity
 
 internal val Gap = 8.dp
-private val StickerRadius = 12.dp
-private val BorderWidth = 2.dp
+private val StickerRadius = 8.dp
+private val BorderWidth = 3.dp
 
 class ProgressWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = WidgetData.load(context)
-        val addIntent = Intent(Intent.ACTION_VIEW, Uri.parse("rawtracker://add")).setPackage(context.packageName)
-        val waterIntent = Intent(Intent.ACTION_VIEW, Uri.parse("rawtracker://water")).setPackage(context.packageName)
-        val openIntent = Intent(context, MainActivity::class.java)
+        val addIntent = widgetLaunchIntent(context, "rawtracker://add")
+        val waterIntent = widgetLaunchIntent(context, "rawtracker://water")
+        val openIntent = widgetLaunchIntent(context)
         provideContent { ProgressContent(context, data, addIntent, waterIntent, openIntent) }
     }
 }

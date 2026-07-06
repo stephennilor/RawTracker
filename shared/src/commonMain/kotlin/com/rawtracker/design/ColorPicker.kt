@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -63,12 +64,27 @@ fun Color.toHsv(): Triple<Float, Float, Float> {
  */
 @Composable
 fun HsvColorPicker(color: Color, onColorChange: (Color) -> Unit) {
-    val initial = remember { color.toHsv() }
-    var hue by remember { mutableFloatStateOf(initial.first) }
-    var sat by remember { mutableFloatStateOf(initial.second) }
-    var value by remember { mutableFloatStateOf(initial.third) }
+    var hue by remember { mutableFloatStateOf(0f) }
+    var sat by remember { mutableFloatStateOf(0f) }
+    var value by remember { mutableFloatStateOf(0f) }
+    // Re-sync the sliders whenever `color` is changed from the OUTSIDE (a preset/swatch tap, or
+    // the parent re-keying after Apply). We skip re-syncing for colours we just emitted ourselves
+    // so the user's drag isn't fought — and crucially so HSV isn't lost on greys (where hue is
+    // ambiguous). Without this, the picker stayed stuck at its first value until the app restarted.
+    var lastEmitted by remember { mutableStateOf<Color?>(null) }
+    if (color != lastEmitted) {
+        val (h, s, v) = color.toHsv()
+        hue = h
+        sat = s
+        value = v
+        lastEmitted = color
+    }
 
-    fun emit() = onColorChange(hsvColor(hue, sat, value))
+    fun emit() {
+        val emitted = hsvColor(hue, sat, value)
+        lastEmitted = emitted
+        onColorChange(emitted)
+    }
 
     val hueColor = hsvColor(hue, 1f, 1f)
 

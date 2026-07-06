@@ -1,8 +1,6 @@
 package com.rawtracker.widget
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,16 +23,15 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
-import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.rawtracker.design.RawIcons
 
 /** 1x1 home-screen widget: tap to jump straight into camera capture. */
 class CameraWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = WidgetData.load(context)
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("rawtracker://capture"))
-            .setPackage(context.packageName)
+        val intent = widgetLaunchIntent(context, "rawtracker://capture")
         val canvas = ColorProvider(Color(data.canvas))
         val ink = ColorProvider(Color(data.ink))
         val inkDim = ColorProvider(Color(data.ink).copy(alpha = 0.62f))
@@ -53,15 +50,14 @@ class CameraWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.width(58.dp).height(44.dp).background(ink).cornerRadius(12.dp).padding(3.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "CAM",
-                            maxLines = 1,
-                            style = TextStyle(
-                                color = canvas,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp,
-                                textAlign = TextAlign.Center
-                            )
+                        VectorIconImage(
+                            context = context,
+                            vector = RawIcons.camera,
+                            color = Color(data.canvas),
+                            width = 52.dp,
+                            height = 38.dp,
+                            fillRatio = 0.82f,
+                            contentDescription = "Open camera",
                         )
                     }
                     Spacer(GlanceModifier.height(5.dp))

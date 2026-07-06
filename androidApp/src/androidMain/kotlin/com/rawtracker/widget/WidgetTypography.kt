@@ -3,6 +3,7 @@ package com.rawtracker.widget
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
@@ -11,7 +12,14 @@ import android.graphics.Typeface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.graphics.vector.VectorGroup
+import androidx.compose.ui.graphics.vector.VectorNode
+import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
@@ -21,7 +29,7 @@ import androidx.glance.ImageProvider
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import com.rawtracker.R
-import kotlin.math.min
+import com.rawtracker.design.RawIcons
 
 internal enum class WidgetFont { Display, Mono }
 
@@ -44,6 +52,34 @@ private fun WidgetFont.typeface(context: Context): Typeface {
     return Typeface.create(base, Typeface.BOLD)
 }
 
+private fun withAlpha(color: Int, alpha: Float): Int {
+    val a = (alpha * 255f).toInt().coerceIn(0, 255)
+    return color and 0x00FFFFFF or (a shl 24)
+}
+
+private fun drawSoilpunkGrain(canvas: Canvas, width: Int, height: Int, ink: Int) {
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = withAlpha(ink, 0.055f)
+    }
+    val step = 5.5f
+    var row = 0
+    var y = 0f
+    while (y < height) {
+        val stagger = if (row % 2 == 0) 0f else step * 0.5f
+        var x = stagger
+        while (x < width) {
+            canvas.drawCircle(x, y, 0.75f, paint)
+            x += step
+        }
+        y += step
+        row++
+    }
+}
+
+private fun applySoilpunkFinish(bitmap: Bitmap, ink: Int) {
+    drawSoilpunkGrain(Canvas(bitmap), bitmap.width, bitmap.height, ink)
+}
+
 private fun drawStretchedText(
     canvas: Canvas,
     text: String,
@@ -53,6 +89,7 @@ private fun drawStretchedText(
     heightRatio: Float,
     minScaleX: Float = 0.35f,
     maxScaleX: Float = 5.5f,
+    ghost: Boolean = false,
 ) {
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.typeface = typeface
@@ -74,6 +111,15 @@ private fun drawStretchedText(
     val scaledWidth = naturalWidth * scaleX
     val baseY = rect.top + (rect.height() - bounds.height()) / 2f - bounds.top
     val startX = rect.left + (rect.width() - scaledWidth) / 2f
+    if (ghost) {
+        canvas.save()
+        canvas.translate(startX + 1.5f, baseY + 1f)
+        canvas.scale(scaleX, 1f)
+        paint.color = withAlpha(color, 0.14f)
+        canvas.drawText(text, 0f, 0f, paint)
+        canvas.restore()
+        paint.color = color
+    }
     canvas.save()
     canvas.translate(startX, baseY)
     canvas.scale(scaleX, 1f)
@@ -108,67 +154,59 @@ internal fun renderStretchedText(
         ),
         typeface = font.typeface(context),
         color = color,
-        heightRatio = if (font == WidgetFont.Display) 0.9f else 0.78f
+        heightRatio = if (font == WidgetFont.Display) 0.9f else 0.78f,
+        ghost = font == WidgetFont.Display,
     )
+    applySoilpunkFinish(bitmap, color)
     return bitmap
 }
 
-internal fun renderFoodIcon(widthPx: Int, heightPx: Int, color: Int): Bitmap {
+private fun collectVectorPaths(node: VectorNode, out: MutableList<VectorPath>) {
+    when (node) {
+        is VectorPath -> out.add(node)
+        is VectorGroup -> node.forEach { collectVectorPaths(it, out) }
+    }
+}
+
+/**
+ * Rasterises a Phosphor [ImageVector] (the same icons the app uses) into a duotone-tinted bitmap
+ * for Glance, which can't render vectors directly. The icon is scaled with preserved aspect ratio
+ * and centred so it never distorts regardless of tile dimensions. Group transforms are ignored —
+ * fine for Phosphor's flat single-/multi-path structure.
+ */
+internal fun renderVectorIcon(
+    vector: ImageVector,
+    widthPx: Int,
+    heightPx: Int,
+    color: Int,
+    fillRatio: Float = 0.7f,
+    grain: Boolean = true,
+): Bitmap {
     val w = widthPx.coerceAtLeast(1)
     val h = heightPx.coerceAtLeast(1)
     val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
-    val stroke = min(w, h) * 0.08f
+    val scale = minOf(w / vector.viewportWidth, h / vector.viewportHeight) * fillRatio
+    val drawW = vector.viewportWidth * scale
+    val drawH = vector.viewportHeight * scale
+    val matrix = Matrix().apply {
+        postScale(scale, scale)
+        postTranslate((w - drawW) / 2f, (h - drawH) / 2f)
+    }
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
-        this.strokeWidth = stroke
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
+        style = Paint.Style.FILL
     }
-    val top = h * 0.12f
-    val bottom = h * 0.88f
-    val forkX = w * 0.36f
-    val knifeX = w * 0.64f
-    val tineTop = top
-    val tineBottom = h * 0.38f
-    val tineSpread = w * 0.07f
-    canvas.drawLine(forkX, tineBottom, forkX, bottom, paint)
-    canvas.drawLine(forkX - tineSpread, tineTop, forkX - tineSpread, tineBottom, paint)
-    canvas.drawLine(forkX, tineTop, forkX, tineBottom, paint)
-    canvas.drawLine(forkX + tineSpread, tineTop, forkX + tineSpread, tineBottom, paint)
-    val knifePath = Path().apply {
-        moveTo(knifeX, top)
-        cubicTo(w * 0.78f, h * 0.28f, w * 0.72f, h * 0.56f, knifeX, h * 0.58f)
-        lineTo(knifeX, bottom)
+    val paths = mutableListOf<VectorPath>()
+    collectVectorPaths(vector.root, paths)
+    paths.forEach { vp ->
+        val androidPath: Path = PathParser().addPathNodes(vp.pathData).toPath().asAndroidPath()
+        androidPath.fillType =
+            if (vp.pathFillType == PathFillType.EvenOdd) Path.FillType.EVEN_ODD else Path.FillType.WINDING
+        androidPath.transform(matrix)
+        canvas.drawPath(androidPath, paint)
     }
-    canvas.drawPath(knifePath, paint)
-    return bitmap
-}
-
-internal fun renderWaterIcon(widthPx: Int, heightPx: Int, color: Int): Bitmap {
-    val w = widthPx.coerceAtLeast(1)
-    val h = heightPx.coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.color = color
-        style = Paint.Style.STROKE
-        strokeWidth = min(w, h) * 0.08f
-        strokeJoin = Paint.Join.ROUND
-        strokeCap = Paint.Cap.ROUND
-    }
-    val cx = w / 2f
-    val top = h * 0.08f
-    val bottom = h * 0.9f
-    val half = w * 0.32f
-    val path = Path().apply {
-        moveTo(cx, top)
-        cubicTo(cx + half * 1.6f, top + h * 0.18f, cx + half * 1.6f, bottom - h * 0.12f, cx, bottom)
-        cubicTo(cx - half * 1.6f, bottom - h * 0.12f, cx - half * 1.6f, top + h * 0.18f, cx, top)
-        close()
-    }
-    canvas.drawPath(path, paint)
+    if (grain) applySoilpunkFinish(bitmap, color)
     return bitmap
 }
 
@@ -201,6 +239,7 @@ internal fun renderMacroStrip(
         val right = left + cellW
         drawMacroCell(canvas, label, value, RectF(left, 0f, right, h.toFloat()), display, mono, ink, inkDim)
     }
+    applySoilpunkFinish(bitmap, ink)
     return bitmap
 }
 
@@ -227,6 +266,7 @@ internal fun renderMacroCell(
         ink = ink,
         inkDim = inkDim
     )
+    applySoilpunkFinish(bitmap, ink)
     return bitmap
 }
 
@@ -258,7 +298,8 @@ private fun drawMacroCell(
         typeface = display,
         color = ink,
         heightRatio = 0.9f,
-        minScaleX = 0.2f
+        minScaleX = 0.2f,
+        ghost = true,
     )
 }
 
@@ -301,15 +342,38 @@ internal fun ActionIconImage(
     height: Dp,
     modifier: GlanceModifier = GlanceModifier,
 ) {
+    VectorIconImage(
+        context = context,
+        vector = if (water) RawIcons.water else RawIcons.food,
+        color = color,
+        width = width,
+        height = height,
+        modifier = modifier,
+        contentDescription = if (water) "Add water" else "Add food",
+        fillRatio = 0.74f,
+    )
+}
+
+@Composable
+internal fun VectorIconImage(
+    context: Context,
+    vector: ImageVector,
+    color: Color,
+    width: Dp,
+    height: Dp,
+    modifier: GlanceModifier = GlanceModifier,
+    contentDescription: String = "",
+    fillRatio: Float = 0.7f,
+) {
     val wPx = dpToPx(context, width)
     val hPx = dpToPx(context, height)
     val argb = color.toArgb()
-    val bitmap = remember(water, wPx, hPx, argb) {
-        if (water) renderWaterIcon(wPx, hPx, argb) else renderFoodIcon(wPx, hPx, argb)
+    val bitmap = remember(vector, wPx, hPx, argb, fillRatio) {
+        renderVectorIcon(vector, wPx, hPx, argb, fillRatio)
     }
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = if (water) "Add water" else "Add food",
+        contentDescription = contentDescription,
         modifier = modifier,
         contentScale = ContentScale.FillBounds,
     )

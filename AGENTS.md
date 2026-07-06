@@ -4,8 +4,10 @@
 
 - Plan large work as a commit-by-commit list where each commit is plain-English and independently testable; report testing status before committing.
 - Prefer full, true, end-to-end live tests as early as possible (run on emulator/simulator, screenshot, check logcat) over claiming success from compilation alone.
-- Widgets must resize to ANY dimension and reflow cleanly with no empty gaps or clipping across all launcher sizes (1×1, 3×1, 1×5, 3×3); verify visually, ideally against real launcher screenshots, not just harness PNGs.
-- Maintain a strict "Brutalist Sticker-Book" identity everywhere (app, widgets, icons): exactly two colors (canvas + ink), no third accent/gradient/shadow, oversized Fredoka numerals + uppercase JetBrains Mono micro-caps labels.
+- Widgets must resize to ANY dimension and reflow cleanly with no empty gaps or clipping across all launcher sizes (1×1, 3×1, 1×5, 3×3); always keep both buttons + all 4 macro values unless below 2×2, collapse text labels to icons at small sizes, fill each tile fully with equal padding, and use genuinely stretched/editorial typography (not just larger text that clips). Real icons must scale with the text; macro values are tappable app-open shortcuts. Verify visually against real launcher screenshots, not just harness PNGs.
+- Maintain a strict "Brutalist Sticker-Book" identity everywhere (app, widgets, icons): exactly two colors (canvas + ink), no third accent/gradient/shadow, oversized Fredoka numerals + uppercase JetBrains Mono micro-caps labels. Lean into a "soilpunk" grit/edge while staying vogue-editorial (see `design/Grit.kt`), but keep the strict two-color duotone.
+- Surface AI/Gemini failures as human-friendly, explanatory messages that distinguish connectivity vs account/billing/model-access vs other, rather than leaking raw error strings.
+- The food-logging chat input must behave like a real messaging app: the text field pinned directly above the keyboard with no whitespace gap, smooth scrolling, and add-image buttons sized to match the input field.
 
 ## Learned Workspace Facts
 

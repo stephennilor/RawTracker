@@ -8,14 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -43,6 +47,7 @@ import com.rawtracker.data.WaterLog
 import com.rawtracker.design.BrutalButton
 import com.rawtracker.design.BrutalIconButton
 import com.rawtracker.design.BrutalTextField
+import com.rawtracker.design.EditorialHeroNumber
 import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
@@ -93,8 +98,7 @@ fun InputScreen(controller: RawTrackerController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .safeDrawingPadding()
-            .imePadding()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top))
             .padding(horizontal = 20.dp)
     ) {
         Row(
@@ -192,47 +196,55 @@ fun InputScreen(controller: RawTrackerController) {
             }
         }
 
-        ui.message?.let { msg ->
-            MonoText(
-                text = msg,
-                color = if (msg.isErrorMessage()) {
-                    Color(0xFFFD4B38)
-                } else ink,
-                weight = FontWeight.Medium,
-                modifier = Modifier.padding(vertical = 6.dp)
+        Column(
+            // safeDrawing's bottom is max(navigationBars, ime), so it rests on the nav bar when
+            // the keyboard is closed and sits flush on the keyboard when open. Do NOT also apply
+            // imePadding() here — that double-counts the keyboard height and leaves a giant gap.
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+        ) {
+            ui.message?.let { msg ->
+                MonoText(
+                    text = msg,
+                    color = if (msg.isErrorMessage()) {
+                        Color(0xFFFD4B38)
+                    } else ink,
+                    weight = FontWeight.Medium,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            }
+
+            if (ui.attachedImage != null) {
+                Row(
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        Modifier.size(40.dp).background(ink, RoundedCornerShape(5.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.Icon(
+                            RawIcons.camera, contentDescription = null,
+                            tint = RawColors.canvas, modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    MonoText("photo attached", size = 13.sp)
+                    BrutalIconButton(RawIcons.close, "Remove photo", { controller.clearAttachment() }, boxSize = 32.dp)
+                }
+            }
+
+            InputBar(
+                value = ui.input,
+                onValueChange = controller::onInputChange,
+                onCamera = { picker.launchCamera() },
+                onGallery = { picker.launchGallery() },
+                onSend = doSend,
+                isParsing = ui.isParsing,
+                focusRequester = composerFocus
             )
         }
-
-        if (ui.attachedImage != null) {
-            Row(
-                modifier = Modifier.padding(bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    Modifier.size(40.dp).background(ink, RoundedCornerShape(5.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.material3.Icon(
-                        RawIcons.camera, contentDescription = null,
-                        tint = RawColors.canvas, modifier = Modifier.size(20.dp)
-                    )
-                }
-                MonoText("photo attached", size = 13.sp)
-                BrutalIconButton(RawIcons.close, "Remove photo", { controller.clearAttachment() }, boxSize = 32.dp)
-            }
-        }
-
-        InputBar(
-            value = ui.input,
-            onValueChange = controller::onInputChange,
-            onCamera = { picker.launchCamera() },
-            onGallery = { picker.launchGallery() },
-            onSend = doSend,
-            isParsing = ui.isParsing,
-            focusRequester = composerFocus
-        )
-        Spacer(Modifier.height(8.dp))
     }
 
         if (ui.isParsing) {
@@ -258,7 +270,15 @@ private fun String.isErrorMessage(): Boolean =
         contains("Gemini", ignoreCase = true) ||
         contains("too long", ignoreCase = true) ||
         contains("not valid", ignoreCase = true) ||
-        contains("could not", ignoreCase = true)
+        contains("isn't valid", ignoreCase = true) ||
+        contains("could not", ignoreCase = true) ||
+        contains("couldn't", ignoreCase = true) ||
+        contains("Can't reach", ignoreCase = true) ||
+        contains("garbled", ignoreCase = true) ||
+        contains("rate limit", ignoreCase = true) ||
+        contains("busy", ignoreCase = true) ||
+        contains("rejected", ignoreCase = true) ||
+        contains("Add your Gemini", ignoreCase = true)
 
 /** Bottom sheet presented when "+ FOOD" is tapped on the widget: pick how to add food. */
 @Composable
@@ -333,18 +353,14 @@ private fun MacroHeader(
 ) {
     val ink = RawColors.ink
     Column {
-        MonoText("CALORIES", weight = FontWeight.Bold, size = 12.sp)
-        androidx.compose.material3.Text(
-            text = calories.first.toString(),
-            color = ink,
-            style = androidx.compose.material3.MaterialTheme.typography.displayLarge
-        )
-        MonoText("/ ${calories.second} kcal", color = ink.copy(alpha = 0.7f), size = 13.sp)
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            MacroPill("PROTEIN", protein, Modifier.weight(1f))
-            MacroPill("CARBS", carbs, Modifier.weight(1f))
-            MacroPill("FAT", fat, Modifier.weight(1f))
+        MonoText("KCAL", weight = FontWeight.Bold, size = 11.sp)
+        EditorialHeroNumber(text = calories.first.toString())
+        MonoText("/ ${calories.second}", color = ink.copy(alpha = 0.68f), size = 12.sp)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            MacroPill("P", protein, Modifier.weight(1f))
+            MacroPill("C", carbs, Modifier.weight(1f))
+            MacroPill("F", fat, Modifier.weight(1f))
         }
     }
 }
@@ -352,14 +368,24 @@ private fun MacroHeader(
 @Composable
 private fun MacroPill(label: String, value: Pair<Int, Int>, modifier: Modifier = Modifier) {
     val ink = RawColors.ink
-    Column(modifier = modifier.inkBorder(ink).padding(10.dp)) {
-        MonoText(label, weight = FontWeight.Bold, size = 11.sp)
+    Column(modifier = modifier.inkBorder(ink).padding(8.dp)) {
+        MonoText(label, weight = FontWeight.Bold, size = 10.sp)
         androidx.compose.material3.Text(
-            text = "${value.first}",
+            text = value.first.toString(),
             color = ink,
-            style = androidx.compose.material3.MaterialTheme.typography.headlineMedium
+            style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.fillMaxWidth().graphicsLayer {
+                scaleX = when (value.first.toString().length) {
+                    1, 2 -> 1.08f
+                    3 -> 1f
+                    else -> 0.92f
+                }
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
+            }
         )
-        MonoText("/ ${value.second}g", color = ink.copy(alpha = 0.7f), size = 11.sp)
+        MonoText("/${value.second}", color = ink.copy(alpha = 0.68f), size = 10.sp)
     }
 }
 
@@ -432,13 +458,14 @@ private fun InputBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        BrutalIconButton(RawIcons.camera, "Camera", onCamera, boxSize = 48.dp)
-        BrutalIconButton(RawIcons.gallery, "Pick photo", onGallery, boxSize = 48.dp)
+        val composerHeight = 52.dp
+        BrutalIconButton(RawIcons.camera, "Camera", onCamera, boxSize = composerHeight)
+        BrutalIconButton(RawIcons.gallery, "Pick photo", onGallery, boxSize = composerHeight)
         BrutalTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = "describe your food...",
-            modifier = Modifier.weight(1f),
+            placeholder = "food...",
+            modifier = Modifier.weight(1f).height(composerHeight),
             imeAction = ImeAction.Send,
             onImeAction = { if (!isParsing) onSend() },
             focusRequester = focusRequester
@@ -448,7 +475,7 @@ private fun InputBar(
             contentDescription = "Send",
             onClick = { if (!isParsing) onSend() },
             filled = true,
-            boxSize = 52.dp
+            boxSize = composerHeight
         )
     }
 }

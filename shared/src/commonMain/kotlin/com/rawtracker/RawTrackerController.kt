@@ -321,8 +321,15 @@ class RawTrackerController(
         container.onDataChanged()
     }
 
-    fun saveGoals(goals: Goals) = scope.launch { repo.saveGoals(goals) }
-    fun saveDuotone(prefs: DuotonePrefs) = scope.launch { repo.saveDuotone(prefs) }
+    fun saveGoals(goals: Goals) = scope.launch {
+        repo.saveGoals(goals)
+        container.onDataChanged()
+    }
+
+    fun saveDuotone(prefs: DuotonePrefs) = scope.launch {
+        repo.saveDuotone(prefs)
+        container.onDataChanged()
+    }
 
     fun saveWidgetPrefs(prefs: WidgetPrefs) = scope.launch {
         repo.saveWidgetPrefs(prefs)

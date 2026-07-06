@@ -5,6 +5,8 @@
 .DS_Store
 build/
 /captures
+tmp_grain/
+widget_preview_out/
 .externalNativeBuild
 .cxx
 iosApp/iosApp.xcworkspace/*

@@ -4,6 +4,9 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.rawtracker.db.RawTrackerDb
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -37,6 +40,9 @@ private class FakeFileStore : FileStore {
 private class RecordingHealthSync : HealthSync {
     val lastMeals = mutableListOf<HealthMeal>()
     val lastWaters = mutableListOf<HealthWater>()
+    val calls = mutableListOf<Pair<List<HealthMeal>, List<HealthWater>>>()
+    var result: HealthSyncResult = HealthSyncResult.Synced
+
     override suspend fun hasPermissions(): Boolean = true
     override suspend fun requestPermissions(): Boolean = true
     override suspend fun reconcileDay(
@@ -44,9 +50,11 @@ private class RecordingHealthSync : HealthSync {
         dayEndMillis: Long,
         meals: List<HealthMeal>,
         waters: List<HealthWater>
-    ) {
+    ): HealthSyncResult {
+        calls += meals to waters
         lastMeals.clear(); lastMeals.addAll(meals)
         lastWaters.clear(); lastWaters.addAll(waters)
+        return result
     }
 }
 
@@ -58,6 +66,8 @@ class MealRepositoryTest {
     private lateinit var repo: MealRepository
 
     private fun now() = System.currentTimeMillis()
+    private fun dateOf(epochMs: Long) =
+        Instant.fromEpochMilliseconds(epochMs).toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     @BeforeTest
     fun setup() {
@@ -87,6 +97,50 @@ class MealRepositoryTest {
 
         // Both of today's meals were pushed to the health hub on the last reconcile.
         assertEquals(2, health.lastMeals.size)
+        assertEquals(2, health.calls.size)
+        assertTrue(repo.observeTodayMeals().first().all { it.syncedHealth })
+    }
+
+    @Test
+    fun healthReconcileFiresForMealEditsDeletesAndTimeChanges() = runTest {
+        val id = repo.saveMeal(ParsedFood("Toast", 250, 8, 30, 10), now(), null)
+        assertEquals(1, health.lastMeals.size)
+
+        repo.updateMeal(id, ParsedFood("Big Toast", 400, 12, 50, 18), now())
+        assertEquals("Big Toast", health.lastMeals.single().foodName)
+        assertEquals(400, health.lastMeals.single().calories)
+
+        repo.updateMealTime(id, now())
+        assertEquals(1, health.lastMeals.size)
+
+        repo.deleteMeal(id)
+        assertEquals(0, health.lastMeals.size)
+        assertTrue(health.calls.size >= 4)
+    }
+
+    @Test
+    fun healthReconcileFiresForWaterAddsDeletesAndTimeChanges() = runTest {
+        val ts = now()
+        repo.logWater(330, ts)
+        assertEquals(1, health.lastWaters.size)
+        assertEquals(330, health.lastWaters.single().milliliters)
+
+        val water = repo.observeWater(dateOf(ts)).first().single()
+        repo.updateWaterTime(water.id, ts + 60_000)
+        assertEquals(1, health.lastWaters.size)
+
+        repo.deleteWater(water.id)
+        assertEquals(0, health.lastWaters.size)
+    }
+
+    @Test
+    fun failedHealthReconcileDoesNotMarkMealSynced() = runTest {
+        health.result = HealthSyncResult.MissingPermissions
+
+        repo.saveMeal(ParsedFood("Eggs", 200, 18, 2, 14), now(), null)
+
+        assertEquals(1, health.calls.size)
+        assertTrue(repo.observeTodayMeals().first().none { it.syncedHealth })
     }
 
     @Test

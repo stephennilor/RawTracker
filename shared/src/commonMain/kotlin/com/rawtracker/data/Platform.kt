@@ -49,6 +49,27 @@ data class HealthWater(
     val clientId: String
 )
 
+enum class HealthSyncStatus {
+    Synced,
+    Unavailable,
+    MissingPermissions,
+    Failed
+}
+
+data class HealthSyncResult(
+    val status: HealthSyncStatus,
+    val message: String? = null
+) {
+    val synced: Boolean get() = status == HealthSyncStatus.Synced
+
+    companion object {
+        val Synced = HealthSyncResult(HealthSyncStatus.Synced)
+        val Unavailable = HealthSyncResult(HealthSyncStatus.Unavailable)
+        val MissingPermissions = HealthSyncResult(HealthSyncStatus.MissingPermissions)
+        fun failed(message: String? = null) = HealthSyncResult(HealthSyncStatus.Failed, message)
+    }
+}
+
 /**
  * Bridge to the native health hub (Health Connect / HealthKit).
  *
@@ -71,7 +92,7 @@ interface HealthSync {
         dayEndMillis: Long,
         meals: List<HealthMeal>,
         waters: List<HealthWater>
-    )
+    ): HealthSyncResult
 }
 
 /** Default no-op used when no native health hub is wired in. */
@@ -83,5 +104,5 @@ class NoopHealthSync : HealthSync {
         dayEndMillis: Long,
         meals: List<HealthMeal>,
         waters: List<HealthWater>
-    ) {}
+    ): HealthSyncResult = HealthSyncResult.Unavailable
 }

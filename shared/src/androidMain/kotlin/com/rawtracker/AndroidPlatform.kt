@@ -21,6 +21,7 @@ import com.rawtracker.data.Connectivity
 import com.rawtracker.data.FileStore
 import com.rawtracker.data.HealthMeal
 import com.rawtracker.data.HealthSync
+import com.rawtracker.data.HealthSyncResult
 import com.rawtracker.data.HealthWater
 import com.rawtracker.data.SqlDriverFactory
 import com.rawtracker.db.RawTrackerDb
@@ -114,22 +115,27 @@ class AndroidHealthSync(private val context: Context) : HealthSync {
         dayEndMillis: Long,
         meals: List<HealthMeal>,
         waters: List<HealthWater>
-    ) {
-        val c = client ?: return
-        if (!hasPermissions()) return
+    ): HealthSyncResult {
+        val c = client ?: return HealthSyncResult.Unavailable
+        if (!hasPermissions()) return HealthSyncResult.MissingPermissions
         val range = TimeRangeFilter.between(
             Instant.ofEpochMilli(dayStartMillis),
             Instant.ofEpochMilli(dayEndMillis)
         )
         // Health Connect only lets an app delete records it authored, so this wipes exactly our
         // own contribution for the day (including legacy records written before client ids).
-        runCatching { c.deleteRecords(NutritionRecord::class, range) }
-        runCatching { c.deleteRecords(HydrationRecord::class, range) }
+        val deletedNutrition = runCatching { c.deleteRecords(NutritionRecord::class, range) }.isSuccess
+        val deletedHydration = runCatching { c.deleteRecords(HydrationRecord::class, range) }.isSuccess
+        if (!deletedNutrition || !deletedHydration) return HealthSyncResult.failed("delete")
         val records = buildList<Record> {
             meals.forEach { add(nutritionRecord(it)) }
             waters.forEach { add(hydrationRecord(it)) }
         }
-        if (records.isNotEmpty()) runCatching { c.insertRecords(records) }
+        if (records.isNotEmpty()) {
+            runCatching { c.insertRecords(records) }
+                .getOrElse { return HealthSyncResult.failed("insert") }
+        }
+        return HealthSyncResult.Synced
     }
 
     private fun nutritionRecord(m: HealthMeal): NutritionRecord {

@@ -51,7 +51,7 @@ class MealRepository(
      * sync on ANY date (including historical days). Best-effort: failures (no permission, hub
      * unavailable) are swallowed so the local write always succeeds.
      */
-    private suspend fun reconcileHealthDay(date: LocalDate) {
+    private suspend fun reconcileHealthDay(date: LocalDate): HealthSyncResult {
         val (start, end) = boundsFor(date)
         val meals = q.mealsBetween(start, end, ::mapMeal).executeAsList().map {
             HealthMeal(it.foodName, it.calories, it.proteinG, it.carbsG, it.fatG, it.eatenAt, mealClientId(it.id))
@@ -59,8 +59,10 @@ class MealRepository(
         val waters = q.waterBetween(start, end) { id, milliliters, loggedAt ->
             HealthWater(milliliters.toInt(), loggedAt, waterClientId(id))
         }.executeAsList()
-        val ok = runCatching { healthSync.reconcileDay(start, end, meals, waters) }.isSuccess
-        if (ok) runCatching { q.markSyncedBetween(start, end) }
+        val result = runCatching { healthSync.reconcileDay(start, end, meals, waters) }
+            .getOrElse { HealthSyncResult.failed() }
+        if (result.synced) runCatching { q.markSyncedBetween(start, end) }
+        return result
     }
 
     /** Reconciles one calendar day on demand (used by launch self-heal / Settings re-sync). */
@@ -70,10 +72,11 @@ class MealRepository(
     suspend fun reconcileHealthToday() = reconcileHealthForDay(today())
 
     /** Reconciles every day that has any local meal or water (full re-sync). */
-    suspend fun reconcileHealthAll() = withContext(Dispatchers.Default) {
+    suspend fun reconcileHealthAll(): HealthSyncResult = withContext(Dispatchers.Default) {
         val mealDays = q.allMeals(::mapMeal).executeAsList().map { dayOf(it.eatenAt) }
         val waterDays = q.allWater { _, _, loggedAt -> dayOf(loggedAt) }.executeAsList()
-        (mealDays + waterDays).toSet().sorted().forEach { reconcileHealthDay(it) }
+        val results = (mealDays + waterDays).toSet().sorted().map { reconcileHealthDay(it) }
+        results.aggregateHealthResult()
     }
 
     fun observeTodayMeals(): Flow<List<Meal>> = observeMeals(today())
@@ -318,4 +321,12 @@ class MealRepository(
         imagePath = image_path,
         syncedHealth = synced_health == 1L
     )
+}
+
+private fun List<HealthSyncResult>.aggregateHealthResult(): HealthSyncResult {
+    if (isEmpty()) return HealthSyncResult.Synced
+    return firstOrNull { it.status == HealthSyncStatus.Failed }
+        ?: firstOrNull { it.status == HealthSyncStatus.MissingPermissions }
+        ?: firstOrNull { it.status == HealthSyncStatus.Unavailable }
+        ?: HealthSyncResult.Synced
 }

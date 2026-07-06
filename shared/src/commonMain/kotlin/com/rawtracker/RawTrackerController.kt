@@ -2,6 +2,8 @@ package com.rawtracker
 
 import com.rawtracker.data.DuotonePrefs
 import com.rawtracker.data.Goals
+import com.rawtracker.data.HealthSyncResult
+import com.rawtracker.data.HealthSyncStatus
 import com.rawtracker.data.HistoryItem
 import com.rawtracker.data.MacroTotals
 import com.rawtracker.data.Meal
@@ -151,10 +153,15 @@ class RawTrackerController(
 
     fun connectHealth() = scope.launch {
         val granted = runCatching { container.healthSync.requestPermissions() }.getOrDefault(false)
+        val syncResult = if (granted) runCatching { repo.reconcileHealthAll() }.getOrNull() else null
         _ui.update {
             it.copy(
                 healthConnected = granted,
-                message = if (granted) "Health connected." else "Health unavailable or denied."
+                message = when {
+                    !granted -> "Health unavailable or permission was denied."
+                    syncResult?.synced == true -> "Health connected and synced."
+                    else -> syncResult.healthMessage("Health connected, but sync needs attention.")
+                }
             )
         }
     }
@@ -166,14 +173,16 @@ class RawTrackerController(
 
     /** Rewrites today's Health Connect data from local truth (manual heal). */
     fun resyncHealthToday() = scope.launch {
-        runCatching { repo.reconcileHealthToday() }
-        _ui.update { it.copy(message = "Re-synced today to Health.") }
+        val result = runCatching { repo.reconcileHealthToday() }
+            .getOrElse { HealthSyncResult.failed() }
+        _ui.update { it.copy(message = result.healthMessage("Re-synced today to Health.")) }
     }
 
     /** Rewrites every day present in the local DB into Health Connect (full heal). */
     fun resyncHealthAll() = scope.launch {
-        runCatching { repo.reconcileHealthAll() }
-        _ui.update { it.copy(message = "Re-synced all days to Health.") }
+        val result = runCatching { repo.reconcileHealthAll() }
+            .getOrElse { HealthSyncResult.failed() }
+        _ui.update { it.copy(message = result.healthMessage("Re-synced all days to Health.")) }
     }
 
     fun openSettings() = _ui.update { it.copy(screen = Screen.Settings) }
@@ -371,4 +380,12 @@ class RawTrackerController(
         val count = repo.pendingCount()
         _ui.update { it.copy(pendingCount = count) }
     }
+}
+
+private fun HealthSyncResult?.healthMessage(success: String): String = when (this?.status) {
+    HealthSyncStatus.Synced -> success
+    HealthSyncStatus.MissingPermissions -> "Connect Health first, then try again."
+    HealthSyncStatus.Unavailable -> "Health Connect is unavailable on this device."
+    HealthSyncStatus.Failed -> "Health sync failed. Try Re-sync in Settings, then check Health permissions."
+    null -> "Health sync failed. Try Re-sync in Settings, then check Health permissions."
 }

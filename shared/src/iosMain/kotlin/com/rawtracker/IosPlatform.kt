@@ -6,6 +6,7 @@ import com.rawtracker.data.Connectivity
 import com.rawtracker.data.FileStore
 import com.rawtracker.data.HealthMeal
 import com.rawtracker.data.HealthSync
+import com.rawtracker.data.HealthSyncResult
 import com.rawtracker.data.HealthWater
 import com.rawtracker.data.SqlDriverFactory
 import com.rawtracker.db.RawTrackerDb
@@ -152,17 +153,18 @@ class IosHealthSync : HealthSync {
         dayEndMillis: Long,
         meals: List<HealthMeal>,
         waters: List<HealthWater>
-    ) {
-        if (!hasPermissions()) return
+    ): HealthSyncResult {
+        if (!HKHealthStore.isHealthDataAvailable()) return HealthSyncResult.Unavailable
+        if (!hasPermissions()) return HealthSyncResult.MissingPermissions
         val startDate = NSDate.dateWithTimeIntervalSince1970(dayStartMillis / 1000.0)
         val endDate = NSDate.dateWithTimeIntervalSince1970(dayEndMillis / 1000.0)
         val predicate = HKQuery.Companion.predicateForSamplesWithStartDate(
             startDate, endDate, HKQueryOptionStrictStartDate
         )
         // HealthKit only deletes samples this app saved, so this clears just our own contribution.
-        listOfNotNull(energyType, proteinType, carbsType, fatType, waterType).forEach { type ->
-            deleteSamples(type, predicate)
-        }
+        val deleted = listOfNotNull(energyType, proteinType, carbsType, fatType, waterType)
+            .all { type -> deleteSamples(type, predicate) }
+        if (!deleted) return HealthSyncResult.failed("delete")
 
         val kcal = HKUnit.unitFromString("kcal")
         val gram = HKUnit.unitFromString("g")
@@ -180,19 +182,19 @@ class IosHealthSync : HealthSync {
                 waterType?.let { add(HKQuantitySample.quantitySampleWithType(it, HKQuantity.quantityWithUnit(ml, w.milliliters.toDouble()), date, date)) }
             }
         }
-        save(samples)
+        return if (save(samples)) HealthSyncResult.Synced else HealthSyncResult.failed("save")
     }
 
-    private suspend fun deleteSamples(type: HKSampleType, predicate: NSPredicate) {
-        suspendCancellableCoroutine { cont ->
-            store.deleteObjectsOfType(type, predicate) { _, _, _ -> if (cont.isActive) cont.resume(Unit) }
+    private suspend fun deleteSamples(type: HKSampleType, predicate: NSPredicate): Boolean {
+        return suspendCancellableCoroutine { cont ->
+            store.deleteObjectsOfType(type, predicate) { success, _, _ -> if (cont.isActive) cont.resume(success) }
         }
     }
 
-    private suspend fun save(samples: List<HKQuantitySample>) {
-        if (samples.isEmpty()) return
-        suspendCancellableCoroutine { cont ->
-            store.saveObjects(samples) { _, _ -> if (cont.isActive) cont.resume(Unit) }
+    private suspend fun save(samples: List<HKQuantitySample>): Boolean {
+        if (samples.isEmpty()) return true
+        return suspendCancellableCoroutine { cont ->
+            store.saveObjects(samples) { success, _ -> if (cont.isActive) cont.resume(success) }
         }
     }
 }

@@ -3,10 +3,13 @@ package com.rawtracker.design
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +26,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -73,24 +77,34 @@ fun SoilpunkGrain(modifier: Modifier = Modifier, ink: Color = RawColors.ink) {
 @Composable
 fun EditorialSectionLabel(text: String, modifier: Modifier = Modifier) {
     val ink = RawColors.ink
-    Box(modifier = modifier.fillMaxWidth()) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Canvas(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp)
-                .offset(y = 10.dp)
+                .width(8.dp)
+                .height(18.dp)
         ) {
-            val y = size.height * 0.35f
-            drawLine(ink.copy(alpha = 0.35f), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
             drawLine(ink.copy(alpha = 0.55f), Offset(0f, 0f), Offset(0f, size.height), strokeWidth = 1.5f)
-            drawLine(ink.copy(alpha = 0.55f), Offset(size.width, 0f), Offset(size.width, size.height), strokeWidth = 1.5f)
         }
         MonoText(
             text = text,
             weight = FontWeight.Bold,
             size = 11.sp,
-            modifier = Modifier.offset(x = 6.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
         )
+        Canvas(
+            modifier = Modifier
+                .weight(1f)
+                .height(18.dp)
+        ) {
+            val y = size.height * 0.5f
+            drawLine(ink.copy(alpha = 0.35f), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+            drawLine(ink.copy(alpha = 0.55f), Offset(size.width, 0f), Offset(size.width, size.height), strokeWidth = 1.5f)
+        }
     }
 }
 

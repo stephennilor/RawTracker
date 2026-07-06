@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -164,6 +165,7 @@ fun BrutalTextField(
     minHeight: Dp = 48.dp,
     maxHeight: Dp = Dp.Unspecified,
     singleLine: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = if (singleLine) 0.dp else 12.dp),
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
@@ -175,7 +177,7 @@ fun BrutalTextField(
         modifier = modifier
             .heightIn(min = minHeight, max = maxHeight)
             .inkBorder(ink)
-            .padding(horizontal = 12.dp, vertical = if (singleLine) 0.dp else 12.dp),
+            .padding(contentPadding),
         contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
     ) {
         BasicTextField(

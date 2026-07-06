@@ -470,10 +470,11 @@ private fun InputBar(
             value = value,
             onValueChange = onValueChange,
             placeholder = strings.foodPlaceholder,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
             minHeight = composerHeight,
             maxHeight = composerMaxHeight,
             singleLine = false,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
             imeAction = ImeAction.Default,
             onImeAction = { if (!isParsing) onSend() },
             focusRequester = focusRequester

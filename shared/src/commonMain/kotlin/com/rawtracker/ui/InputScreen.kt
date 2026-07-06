@@ -125,20 +125,12 @@ fun InputScreen(controller: RawTrackerController) {
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BrutalIconButton(
-                    icon = RawIcons.water,
-                    contentDescription = strings.logWater,
-                    onClick = { controller.openWaterSheet() },
-                    boxSize = 40.dp
-                )
-                BrutalIconButton(
-                    icon = RawIcons.settings,
-                    contentDescription = strings.settings,
-                    onClick = { controller.openSettings() },
-                    boxSize = 40.dp
-                )
-            }
+            BrutalIconButton(
+                icon = RawIcons.settings,
+                contentDescription = strings.settings,
+                onClick = { controller.openSettings() },
+                boxSize = 40.dp
+            )
         }
 
         Spacer(Modifier.height(10.dp))
@@ -239,6 +231,7 @@ fun InputScreen(controller: RawTrackerController) {
             InputBar(
                 value = ui.input,
                 onValueChange = controller::onInputChange,
+                onWater = { controller.openWaterSheet() },
                 onCamera = { picker.launchCamera() },
                 onGallery = { picker.launchGallery() },
                 onSend = doSend,
@@ -455,6 +448,7 @@ private fun TimeChip(epochMs: Long, onTimeChange: (Long) -> Unit) {
 private fun InputBar(
     value: String,
     onValueChange: (String) -> Unit,
+    onWater: () -> Unit,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
     onSend: () -> Unit,
@@ -467,6 +461,7 @@ private fun InputBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         val composerHeight = 52.dp
+        BrutalIconButton(RawIcons.water, strings.logWater, onWater, boxSize = composerHeight)
         BrutalIconButton(RawIcons.camera, strings.camera, onCamera, boxSize = composerHeight)
         BrutalIconButton(RawIcons.gallery, strings.pickPhoto, onGallery, boxSize = composerHeight)
         BrutalTextField(

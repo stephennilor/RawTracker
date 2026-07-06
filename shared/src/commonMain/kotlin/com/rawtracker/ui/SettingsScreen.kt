@@ -43,8 +43,12 @@ import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
 import com.rawtracker.design.inkBorder
 import com.rawtracker.i18n.strings
+import kotlin.random.Random
 
 private fun Color.toArgbLong(): Long = 0xFF000000L or (toArgb().toLong() and 0xFFFFFFL)
+
+private fun randomOpaqueColor(): Long =
+    0xFF000000L or Random.nextInt(0x000000, 0x1000000).toLong()
 
 private data class Swatch(val canvas: Long, val ink: Long, val name: String)
 
@@ -161,12 +165,16 @@ fun SettingsScreen(
                 size = 11.sp
             )
         }
-        MonoText(strings.primaryInk, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+        ColorPickerHeader(strings.primaryInk) {
+            onPreviewDuotone(activeDuotone.copy(ink = randomOpaqueColor()))
+        }
         HsvColorPicker(inkColor) {
             onPreviewDuotone(activeDuotone.copy(ink = it.toArgbLong()))
         }
         Spacer(Modifier.height(14.dp))
-        MonoText(strings.secondaryCanvas, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+        ColorPickerHeader(strings.secondaryCanvas) {
+            onPreviewDuotone(activeDuotone.copy(canvas = randomOpaqueColor()))
+        }
         HsvColorPicker(canvasColor) {
             onPreviewDuotone(activeDuotone.copy(canvas = it.toArgbLong()))
         }
@@ -271,6 +279,23 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         Spacer(Modifier.height(40.dp))
+    }
+}
+
+@Composable
+private fun ColorPickerHeader(label: String, onRandomise: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MonoText(label, weight = FontWeight.Bold, size = 11.sp)
+        BrutalButton(
+            strings.randomiseShort,
+            onRandomise,
+            Modifier,
+            filled = false
+        )
     }
 }
 

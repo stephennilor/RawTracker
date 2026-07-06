@@ -328,7 +328,7 @@ private fun HeroAndMacrosTile(
 ) {
     val innerW = width
     val innerH = height
-    val macroH = if (data.showMacros) innerH.fraction(if (data.showGoal) 0.30f else 0.38f) else 0.dp
+    val macroH = if (data.showMacros) innerH.fraction(if (data.showGoal) 0.42f else 0.46f) else 0.dp
     val calH = innerH - macroH
 
     DataTile(palette, modifier, intent) {

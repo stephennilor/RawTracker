@@ -115,6 +115,62 @@ private fun drawProgressBar(canvas: Canvas, rect: RectF, value: Int, goal: Int, 
     }
 }
 
+private fun drawFilledStretchedText(
+    canvas: Canvas,
+    text: String,
+    rect: RectF,
+    typeface: Typeface,
+    variationSettings: String,
+    ink: Int,
+    inkDim: Int,
+    progress: Float,
+    heightRatio: Float,
+    minScaleX: Float,
+    maxScaleX: Float,
+    strokeRatio: Float,
+    fillFromBottom: Boolean = true,
+) {
+    drawStretchedText(
+        canvas = canvas,
+        text = text,
+        rect = rect,
+        typeface = typeface,
+        variationSettings = variationSettings,
+        color = inkDim,
+        heightRatio = heightRatio,
+        minScaleX = minScaleX,
+        maxScaleX = maxScaleX,
+        ghost = false,
+        fakeBold = true,
+        strokeRatio = strokeRatio,
+    )
+    val ratio = progress.coerceIn(0f, 1f)
+    if (ratio <= 0f) return
+    canvas.save()
+    if (fillFromBottom) {
+        val top = rect.bottom - rect.height() * ratio
+        canvas.clipRect(rect.left, top, rect.right, rect.bottom)
+    } else {
+        val right = rect.left + rect.width() * ratio
+        canvas.clipRect(rect.left, rect.top, right, rect.bottom)
+    }
+    drawStretchedText(
+        canvas = canvas,
+        text = text,
+        rect = rect,
+        typeface = typeface,
+        variationSettings = variationSettings,
+        color = ink,
+        heightRatio = heightRatio,
+        minScaleX = minScaleX,
+        maxScaleX = maxScaleX,
+        ghost = false,
+        fakeBold = true,
+        strokeRatio = strokeRatio,
+    )
+    canvas.restore()
+}
+
 private fun drawStretchedText(
     canvas: Canvas,
     text: String,
@@ -257,38 +313,31 @@ internal fun renderHeroValue(
     val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val pad = (minOf(w, h) * 0.04f).coerceIn(2f, 10f)
-    val barH = (h * 0.08f).coerceIn(4f, 14f)
-    val barGap = (h * 0.04f).coerceIn(2f, 8f)
     val showTarget = showBar && goal > 0
     val useVerticalLabels = showTarget && h >= 220 && w >= 320
-    val barBottom = if (showTarget) h - pad else h - pad - barGap * 0.5f
-    val barTop = if (showTarget) barBottom - barH else h - pad
-    val textBottom = if (showTarget) barTop - barGap else h - pad
+    val textBottom = h - pad
     val sideW = if (useVerticalLabels) (w * 0.12f).coerceIn(12f, 32f) else 0f
     val mono = WidgetFont.Mono.typeface(context)
-    drawStretchedText(
+    val heroText = value.toString()
+    val narrowLongValue = heroText.length >= 4 && w.toFloat() / h.toFloat().coerceAtLeast(1f) < 0.72f
+    val headerH = if (showTarget && !useVerticalLabels) (h * 0.18f).coerceIn(11f, 26f) else 0f
+    val textTop = if (headerH > 0f) pad + headerH * 0.82f else pad
+    drawFilledStretchedText(
         canvas = canvas,
-        text = value.toString(),
-        rect = RectF(pad + sideW * 0.25f, pad, w - pad - sideW * 0.25f, textBottom.coerceAtLeast(pad + 1f)),
+        text = heroText,
+        rect = RectF(pad + sideW * 0.25f, textTop, w - pad - sideW * 0.25f, textBottom.coerceAtLeast(textTop + 1f)),
         typeface = WidgetFont.Display.typeface(context),
         variationSettings = WidgetFont.Display.variationSettings(),
-        color = ink,
-        heightRatio = 0.96f,
-        minScaleX = 0.14f,
-        maxScaleX = 1.8f,
-        ghost = true,
-        fakeBold = true,
-        strokeRatio = 0.026f,
+        ink = ink,
+        inkDim = if (showTarget) inkDim else ink,
+        progress = if (showTarget) progressRatio(value, goal) else 1f,
+        heightRatio = if (narrowLongValue) 0.56f else 0.96f,
+        minScaleX = if (narrowLongValue) 0.24f else 0.08f,
+        maxScaleX = 2.4f,
+        strokeRatio = if (narrowLongValue) 0.016f else 0.026f,
+        fillFromBottom = true,
     )
     if (showTarget) {
-        drawProgressBar(
-            canvas = canvas,
-            rect = RectF(pad, barBottom - barH, w - pad, barBottom),
-            value = value,
-            goal = goal,
-            ink = ink,
-            inkDim = inkDim,
-        )
         if (useVerticalLabels) {
             drawVerticalStretchedText(
                 canvas = canvas,
@@ -309,28 +358,27 @@ internal fun renderHeroValue(
                 clockwise = true,
             )
         } else {
-            val labelH = (h * 0.14f).coerceIn(10f, 24f)
             drawStretchedText(
                 canvas = canvas,
                 text = "KCAL",
-                rect = RectF(pad, pad, w * 0.30f, pad + labelH),
+                rect = RectF(pad, pad, w * 0.40f, pad + headerH),
                 typeface = mono,
                 variationSettings = WidgetFont.Mono.variationSettings(),
-                color = inkDim,
-                heightRatio = 0.68f,
-                minScaleX = 0.28f,
-                maxScaleX = 1.0f,
+                color = ink,
+                heightRatio = 0.78f,
+                minScaleX = 0.40f,
+                maxScaleX = 1.16f,
             )
             drawStretchedText(
                 canvas = canvas,
                 text = "/ $goal",
-                rect = RectF(w * 0.56f, pad, w - pad, pad + labelH),
+                rect = RectF(w * 0.42f, pad, w - pad, pad + headerH),
                 typeface = mono,
                 variationSettings = WidgetFont.Mono.variationSettings(),
                 color = inkDim,
-                heightRatio = 0.64f,
-                minScaleX = 0.2f,
-                maxScaleX = 1.0f,
+                heightRatio = 0.70f,
+                minScaleX = 0.22f,
+                maxScaleX = 1.08f,
             )
         }
     } else {
@@ -577,56 +625,49 @@ private fun drawMacroCell(
     ink: Int,
     inkDim: Int,
 ) {
-    val padX = rect.width() * 0.025f
-    val padY = rect.height() * 0.02f
-    val labelH = (rect.height() * 0.20f).coerceIn(8f, 22f)
-    val barH = (rect.height() * 0.075f).coerceIn(3f, 10f)
-    val barBottom = rect.bottom - rect.height() * 0.06f
-    val barTop = barBottom - barH
-    drawProgressBar(
+    val padX = rect.width() * 0.018f
+    val padY = rect.height() * 0.025f
+    val labelH = (rect.height() * 0.30f).coerceIn(10f, 28f)
+    val valueBottom = rect.bottom - padY
+    val valueInt = value.toIntOrNull() ?: 0
+    val progress = progressRatio(valueInt, goal)
+    drawFilledStretchedText(
         canvas = canvas,
-        rect = RectF(rect.left + padX, barTop, rect.right - padX, barBottom),
-        value = value.toIntOrNull() ?: 0,
-        goal = goal,
-        ink = ink,
-        inkDim = inkDim,
-    )
-    drawStretchedText(
-        canvas = canvas,
-        text = value,
-        rect = RectF(rect.left + padX, rect.top + padY, rect.right - padX, barTop - rect.height() * 0.02f),
+        text = valueInt.toString(),
+        rect = RectF(rect.left + padX, rect.top + padY + labelH * 0.78f, rect.right - padX, valueBottom),
         typeface = display,
         variationSettings = WidgetFont.Display.variationSettings(),
-        color = ink,
-        heightRatio = 0.96f,
-        minScaleX = 0.14f,
-        maxScaleX = 1.56f,
-        ghost = true,
-        fakeBold = true,
-        strokeRatio = 0.026f,
+        ink = ink,
+        inkDim = inkDim,
+        progress = progress,
+        heightRatio = 1.02f,
+        minScaleX = 0.10f,
+        maxScaleX = 2.35f,
+        strokeRatio = 0.034f,
+        fillFromBottom = true,
     )
     drawStretchedText(
         canvas = canvas,
         text = label,
-        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.22f, rect.top + padY + labelH),
+        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.38f, rect.top + padY + labelH),
         typeface = mono,
         variationSettings = WidgetFont.Mono.variationSettings(),
-        color = inkDim,
-        heightRatio = 0.68f,
-        minScaleX = 0.35f,
-        maxScaleX = 1.0f,
+        color = ink,
+        heightRatio = 0.82f,
+        minScaleX = 0.55f,
+        maxScaleX = 1.35f,
     )
-    if (goal > 0 && rect.width() >= 58f) {
+    if (goal > 0 && rect.width() >= 72f && rect.height() >= 36f) {
         drawStretchedText(
             canvas = canvas,
             text = "/ $goal",
-            rect = RectF(rect.left + rect.width() * 0.36f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
+            rect = RectF(rect.left + rect.width() * 0.40f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
             typeface = mono,
             variationSettings = WidgetFont.Mono.variationSettings(),
             color = inkDim,
-            heightRatio = 0.62f,
-            minScaleX = 0.28f,
-            maxScaleX = 1.0f,
+            heightRatio = 0.70f,
+            minScaleX = 0.26f,
+            maxScaleX = 1.08f,
         )
     }
 }
@@ -642,56 +683,48 @@ private fun drawMacroStackRow(
     ink: Int,
     inkDim: Int,
 ) {
-    val padX = rect.width() * 0.035f
-    val padY = rect.height() * 0.05f
-    val barH = (rect.height() * 0.14f).coerceIn(2f, 7f)
-    val barBottom = rect.bottom - padY
-    val textBottom = barBottom - barH - rect.height() * 0.02f
-    val labelH = (rect.height() * 0.26f).coerceIn(8f, 18f)
-    drawProgressBar(
-        canvas = canvas,
-        rect = RectF(rect.left + padX, barBottom - barH, rect.right - padX, barBottom),
-        value = value,
-        goal = goal,
-        ink = ink,
-        inkDim = inkDim,
-    )
-    drawStretchedText(
+    val padX = rect.width() * 0.026f
+    val padY = rect.height() * 0.045f
+    val textBottom = rect.bottom - padY
+    val labelH = (rect.height() * 0.34f).coerceIn(10f, 22f)
+    val progress = progressRatio(value, goal)
+    drawFilledStretchedText(
         canvas = canvas,
         text = value.toString(),
-        rect = RectF(rect.left + padX, rect.top + padY, rect.right - padX, textBottom),
+        rect = RectF(rect.left + rect.width() * 0.24f, rect.top + padY + labelH * 0.18f, rect.right - padX, textBottom),
         typeface = display,
         variationSettings = WidgetFont.Display.variationSettings(),
-        color = ink,
-        heightRatio = 0.96f,
-        minScaleX = 0.14f,
-        maxScaleX = 1.45f,
-        ghost = true,
-        fakeBold = true,
-        strokeRatio = 0.026f,
+        ink = ink,
+        inkDim = inkDim,
+        progress = progress,
+        heightRatio = 0.98f,
+        minScaleX = 0.10f,
+        maxScaleX = 2.1f,
+        strokeRatio = 0.032f,
+        fillFromBottom = true,
     )
     drawStretchedText(
         canvas = canvas,
         text = label,
-        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.22f, rect.top + padY + labelH),
+        rect = RectF(rect.left + padX, rect.top + padY, rect.left + rect.width() * 0.24f, rect.top + padY + labelH),
         typeface = mono,
         variationSettings = WidgetFont.Mono.variationSettings(),
-        color = inkDim,
-        heightRatio = 0.68f,
-        minScaleX = 0.35f,
-        maxScaleX = 1.0f,
+        color = ink,
+        heightRatio = 0.84f,
+        minScaleX = 0.44f,
+        maxScaleX = 1.22f,
     )
-    if (goal > 0 && rect.width() >= 70f) {
+    if (goal > 0 && rect.width() >= 96f && rect.height() >= 42f) {
         drawStretchedText(
             canvas = canvas,
             text = "/ $goal",
-            rect = RectF(rect.left + rect.width() * 0.34f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
+            rect = RectF(rect.left + rect.width() * 0.48f, rect.top + padY, rect.right - padX, rect.top + padY + labelH),
             typeface = mono,
             variationSettings = WidgetFont.Mono.variationSettings(),
             color = inkDim,
-            heightRatio = 0.6f,
+            heightRatio = 0.66f,
             minScaleX = 0.24f,
-            maxScaleX = 1.0f,
+            maxScaleX = 1.08f,
         )
     }
 }

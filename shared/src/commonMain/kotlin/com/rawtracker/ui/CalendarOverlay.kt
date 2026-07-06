@@ -32,6 +32,7 @@ import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
 import com.rawtracker.design.inkBorder
+import com.rawtracker.i18n.strings
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.datetime.DatePeriod
@@ -79,18 +80,18 @@ fun CalendarOverlay(controller: RawTrackerController, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BrutalIconButton(RawIcons.caretLeft, "Previous month", {
+                BrutalIconButton(RawIcons.caretLeft, strings.previousMonth, {
                     monthAnchor = monthAnchor.minus(DatePeriod(months = 1))
                 }, boxSize = 38.dp)
-                MonoText("${monthFull(monthAnchor.month)} ${monthAnchor.year}", weight = FontWeight.Bold, size = 14.sp)
-                BrutalIconButton(RawIcons.caretRight, "Next month", {
+                MonoText("${strings.monthFull(monthAnchor.month)} ${monthAnchor.year}", weight = FontWeight.Bold, size = 14.sp)
+                BrutalIconButton(RawIcons.caretRight, strings.nextMonth, {
                     monthAnchor = monthAnchor.plus(DatePeriod(months = 1))
                 }, boxSize = 38.dp)
             }
             Spacer(Modifier.height(12.dp))
 
             Row(Modifier.fillMaxWidth()) {
-                listOf("M", "T", "W", "T", "F", "S", "S").forEach { d ->
+                strings.weekdayInitials().forEach { d ->
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         MonoText(d, color = ink.copy(alpha = 0.6f), weight = FontWeight.Bold, size = 11.sp)
                     }
@@ -140,7 +141,7 @@ fun CalendarOverlay(controller: RawTrackerController, onDismiss: () -> Unit) {
             }
 
             Spacer(Modifier.height(10.dp))
-            BrutalButton("Jump to today", {
+            BrutalButton(strings.jumpToday, {
                 controller.goToday()
                 onDismiss()
             }, Modifier.fillMaxWidth(), filled = false)

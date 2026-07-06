@@ -33,6 +33,7 @@ import com.rawtracker.design.BrutalTextField
 import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.inkBorder
+import com.rawtracker.i18n.strings
 
 private val WATER_PRESETS = listOf(250, 500, 750)
 
@@ -70,8 +71,8 @@ fun WaterSheet(controller: RawTrackerController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MonoText("ADD WATER", weight = FontWeight.Bold, size = 14.sp)
-                MonoText("today: $total ml", color = ink.copy(alpha = 0.7f), size = 13.sp)
+                MonoText(strings.addWater, weight = FontWeight.Bold, size = 14.sp)
+                MonoText(strings.waterToday(total), color = ink.copy(alpha = 0.7f), size = 13.sp)
             }
             Spacer(Modifier.height(14.dp))
 
@@ -85,30 +86,30 @@ fun WaterSheet(controller: RawTrackerController) {
                             .padding(vertical = 16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        MonoText("$ml ml", weight = FontWeight.Bold, size = 15.sp)
+                        MonoText(strings.waterAmount(ml), weight = FontWeight.Bold, size = 15.sp)
                     }
                 }
             }
             Spacer(Modifier.height(16.dp))
 
-            MonoText("TIME", weight = FontWeight.Bold, size = 11.sp)
+            MonoText(strings.time, weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))
             TimeField(ts) { ts = it }
             Spacer(Modifier.height(16.dp))
 
-            MonoText("CUSTOM (ml)", weight = FontWeight.Bold, size = 11.sp)
+            MonoText(strings.customMl, weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrutalTextField(
                     value = custom,
                     onValueChange = { custom = it.filter { c -> c.isDigit() }.take(5) },
                     modifier = Modifier.weight(1f),
-                    placeholder = "e.g. 330",
+                    placeholder = strings.exampleWaterAmount,
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = addCustom
                 )
-                BrutalButton("Add", addCustom, Modifier.weight(1f))
+                BrutalButton(strings.add, addCustom, Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
         }

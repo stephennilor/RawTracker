@@ -2,6 +2,7 @@ package com.rawtracker.ai
 
 import com.rawtracker.data.ParsedFood
 import com.rawtracker.data.ParsedFoodItem
+import com.rawtracker.i18n.strings
 import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -337,55 +338,55 @@ private fun explainGeminiFailure(err: Throwable): String {
     val types = err.exceptionTypeChain()
 
     if (text.contains("Missing GEMINI_API_KEY", ignoreCase = true)) {
-        return "Add your Gemini API key in Settings to parse food."
+        return strings.missingGeminiKey
     }
     if (text.contains("Provide text or an image", ignoreCase = true)) {
-        return "Type what you ate or attach a photo."
+        return strings.provideFoodInput
     }
     // A connectivity failure (no internet / DNS) often has an empty message, so detect it by
     // exception TYPE as well as text — otherwise it falls through to a misleading message.
     if (http == null && isNetworkProblem(text, types)) {
-        return "Can't reach Gemini. Check your internet connection and try again."
+        return strings.cannotReachGemini
     }
     // Account/key problems are only meaningful when Google actually answered with an HTTP error.
     if (http != null) {
         return explainHttpError(http, text)
     }
     if (err.isTransientGeminiFailure()) {
-        return "Gemini took too long. Try again with a shorter note or a smaller photo."
+        return strings.geminiTimeout
     }
     when (response?.failure) {
         GeminiResponseFailure.EMPTY ->
-            return "Gemini couldn't estimate this meal. Try a clearer photo or add a few words describing it."
+            return strings.geminiEmptyEstimate
         GeminiResponseFailure.MACROS ->
-            return "Gemini sent back a garbled answer. Tap send again — if it keeps happening, rephrase or shorten your note."
+            return strings.geminiGarbled
         GeminiResponseFailure.ENVELOPE ->
-            return "Got an unexpected response from Gemini. Try again in a moment."
+            return strings.geminiUnexpected
         null -> Unit
     }
     if (err is SerializationException) {
-        return "Gemini sent back a garbled answer. Tap send again — if it keeps happening, rephrase or shorten your note."
+        return strings.geminiGarbled
     }
-    return "Can't reach Gemini. Check your internet connection and try again."
+    return strings.cannotReachGemini
 }
 
 private fun explainHttpError(http: GeminiHttpException, text: String): String = when {
     isApiKeyProblem(http, text) ->
-        "Your Gemini API key isn't accepted. In Settings, paste a current key from Google AI Studio (older unrestricted keys are now blocked)."
+        strings.geminiKeyRejected
     isAccountAccessProblem(http, text) ->
-        "Gemini denied this API key. In Google AI Studio, check the key is active and that the Gemini API (and billing, if required) is enabled."
+        strings.geminiKeyDenied
     http.httpStatus == 429 || isRateLimitProblem(text) ->
-        "Gemini rate limit hit. Wait a minute, then try again — or check your quota in Google AI Studio."
+        strings.geminiRateLimit
     http.httpStatus == 404 || text.contains("is not found", ignoreCase = true) ->
-        "This Gemini model isn't available for your key. Try again later or update the app."
+        strings.geminiModelUnavailable
     http.httpStatus in setOf(503, 502, 504) || text.contains("overloaded", ignoreCase = true) ->
-        "Gemini is busy right now. Wait a moment and try again."
+        strings.geminiBusy
     http.httpStatus in 500..599 ->
-        "Gemini hit a server glitch. Try again in a minute."
+        strings.geminiServerGlitch
     http.httpStatus in 400..499 ->
-        "Gemini rejected the request (${http.httpStatus}). Check your API key in Settings."
+        strings.geminiRejected(http.httpStatus)
     else ->
-        "Gemini returned an error (${http.httpStatus}). Try again in a moment."
+        strings.geminiReturnedError(http.httpStatus)
 }
 
 private fun Throwable.findGeminiHttpException(): GeminiHttpException? =

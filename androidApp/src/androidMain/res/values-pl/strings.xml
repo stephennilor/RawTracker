@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">RawTracker</string>
+    <string name="widget_action_label">Zapisz jedzenie</string>
+    <string name="widget_tracker_label">Makro RawTracker</string>
+    <string name="camera_widget_desc">Szybkie zdjęcie posiłku w RawTracker</string>
+    <string name="progress_widget_desc">Dzisiejsze makro + szybkie dodanie wody</string>
+</resources>

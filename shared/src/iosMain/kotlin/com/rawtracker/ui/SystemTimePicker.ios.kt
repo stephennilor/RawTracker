@@ -2,6 +2,7 @@ package com.rawtracker.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.rawtracker.i18n.strings
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitHour
 import platform.Foundation.NSCalendarUnitMinute
@@ -47,7 +48,7 @@ private class IosTimePicker : SystemTimePicker {
         picker.setTranslatesAutoresizingMaskIntoConstraints(false)
 
         val done = UIButton.buttonWithType(UIButtonTypeSystem)
-        done.setTitle("Done", forState = UIControlStateNormal)
+        done.setTitle(strings.done, forState = UIControlStateNormal)
         done.setTranslatesAutoresizingMaskIntoConstraints(false)
         done.addAction(
             UIAction.actionWithHandler {
@@ -62,7 +63,7 @@ private class IosTimePicker : SystemTimePicker {
         )
 
         val cancel = UIButton.buttonWithType(UIButtonTypeSystem)
-        cancel.setTitle("Cancel", forState = UIControlStateNormal)
+        cancel.setTitle(strings.cancel, forState = UIControlStateNormal)
         cancel.setTranslatesAutoresizingMaskIntoConstraints(false)
         cancel.addAction(
             UIAction.actionWithHandler { container.dismissViewControllerAnimated(true, completion = null) },

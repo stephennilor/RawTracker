@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rawtracker.i18n.strings
 import kotlinx.coroutines.delay
 
 /** The single elevation primitive: hard ink border, tight radius for soilpunk edge. */
@@ -265,7 +266,7 @@ fun ParsingOverlay(onCancel: () -> Unit) {
             }
             Spacer(Modifier.height(20.dp))
             MonoText(
-                text = "ASKING GEMINI",
+                text = strings.askingGemini,
                 weight = FontWeight.Bold,
                 size = 16.sp
             )
@@ -277,21 +278,21 @@ fun ParsingOverlay(onCancel: () -> Unit) {
             )
             Spacer(Modifier.height(4.dp))
             MonoText(
-                text = "Elapsed ${formatElapsed(elapsedSeconds)}",
+                text = strings.elapsed(formatElapsed(elapsedSeconds)),
                 color = ink.copy(alpha = 0.55f),
                 size = 12.sp
             )
             Spacer(Modifier.height(28.dp))
-            BrutalButton("Cancel", onCancel, filled = false)
+            BrutalButton(strings.cancel, onCancel, filled = false)
         }
     }
 }
 
 private fun elapsedCopy(seconds: Int): String = when {
-    seconds < 12 -> "Request sent. Waiting for model response."
-    seconds < 30 -> "Still waiting. Gemini can be slow with photos."
-    seconds < 60 -> "Still working. You can cancel and retry if needed."
-    else -> "Long wait. Network or Gemini may be slow right now."
+    seconds < 12 -> strings.parseQuickWait
+    seconds < 30 -> strings.parsePhotoWait
+    seconds < 60 -> strings.parseRetryWait
+    else -> strings.parseLongWait
 }
 
 private fun formatElapsed(seconds: Int): String {

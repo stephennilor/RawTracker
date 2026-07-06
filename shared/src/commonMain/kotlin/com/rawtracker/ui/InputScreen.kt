@@ -52,6 +52,7 @@ import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
 import com.rawtracker.design.inkBorder
+import com.rawtracker.i18n.strings
 import com.rawtracker.design.ParsingOverlay
 import kotlinx.coroutines.delay
 
@@ -107,7 +108,7 @@ fun InputScreen(controller: RawTrackerController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MonoText("RAWTRACKER", weight = FontWeight.Bold, size = 13.sp)
+                MonoText(strings.rawtracker, weight = FontWeight.Bold, size = 13.sp)
                 if (ui.pendingCount > 0) {
                     Spacer(Modifier.width(8.dp))
                     Box(
@@ -116,7 +117,7 @@ fun InputScreen(controller: RawTrackerController) {
                             .padding(horizontal = 7.dp, vertical = 2.dp)
                     ) {
                         MonoText(
-                            "${ui.pendingCount} queued",
+                            strings.queued(ui.pendingCount),
                             color = RawColors.canvas,
                             weight = FontWeight.Bold,
                             size = 10.sp
@@ -127,13 +128,13 @@ fun InputScreen(controller: RawTrackerController) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 BrutalIconButton(
                     icon = RawIcons.water,
-                    contentDescription = "Log water",
+                    contentDescription = strings.logWater,
                     onClick = { controller.openWaterSheet() },
                     boxSize = 40.dp
                 )
                 BrutalIconButton(
                     icon = RawIcons.settings,
-                    contentDescription = "Settings",
+                    contentDescription = strings.settings,
                     onClick = { controller.openSettings() },
                     boxSize = 40.dp
                 )
@@ -163,7 +164,7 @@ fun InputScreen(controller: RawTrackerController) {
             if (history.isEmpty()) {
                 items(listOf(Unit)) {
                     MonoText(
-                        "// nothing logged today",
+                        strings.nothingLoggedToday,
                         color = ink.copy(alpha = 0.5f),
                         modifier = Modifier.padding(vertical = 24.dp)
                     )
@@ -230,8 +231,8 @@ fun InputScreen(controller: RawTrackerController) {
                             tint = RawColors.canvas, modifier = Modifier.size(20.dp)
                         )
                     }
-                    MonoText("photo attached", size = 13.sp)
-                    BrutalIconButton(RawIcons.close, "Remove photo", { controller.clearAttachment() }, boxSize = 32.dp)
+                    MonoText(strings.photoAttached, size = 13.sp)
+                    BrutalIconButton(RawIcons.close, strings.removePhoto, { controller.clearAttachment() }, boxSize = 32.dp)
                 }
             }
 
@@ -278,7 +279,14 @@ private fun String.isErrorMessage(): Boolean =
         contains("rate limit", ignoreCase = true) ||
         contains("busy", ignoreCase = true) ||
         contains("rejected", ignoreCase = true) ||
-        contains("Add your Gemini", ignoreCase = true)
+        contains("Add your Gemini", ignoreCase = true) ||
+        contains("nie powiod", ignoreCase = true) ||
+        contains("nie mog", ignoreCase = true) ||
+        contains("odrzuci", ignoreCase = true) ||
+        contains("niedost", ignoreCase = true) ||
+        contains("sprawd", ignoreCase = true) ||
+        contains("limit", ignoreCase = true) ||
+        contains("zaj", ignoreCase = true)
 
 /** Bottom sheet presented when "+ FOOD" is tapped on the widget: pick how to add food. */
 @Composable
@@ -303,13 +311,13 @@ private fun AddFoodChooser(
                 .clickable(enabled = false) {}
                 .padding(20.dp)
         ) {
-            MonoText("ADD FOOD", weight = FontWeight.Bold, size = 14.sp)
+            MonoText(strings.addFood, weight = FontWeight.Bold, size = 14.sp)
             Spacer(Modifier.height(14.dp))
-            BrutalButton("Describe", onDescribe, Modifier.fillMaxWidth())
+            BrutalButton(strings.describe, onDescribe, Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
-            BrutalButton("Photo", onPhoto, Modifier.fillMaxWidth(), filled = false)
+            BrutalButton(strings.photo, onPhoto, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(10.dp))
-            BrutalButton("Photo + describe", onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
+            BrutalButton(strings.photoAndDescribe, onPhotoAndDescribe, Modifier.fillMaxWidth(), filled = false)
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -323,7 +331,7 @@ private fun DateNav(label: String, onPrev: () -> Unit, onNext: () -> Unit, onPic
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BrutalIconButton(RawIcons.caretLeft, "Previous day", onPrev, boxSize = 40.dp)
+        BrutalIconButton(RawIcons.caretLeft, strings.previousDay, onPrev, boxSize = 40.dp)
         Row(
             modifier = Modifier
                 .weight(1f)
@@ -340,7 +348,7 @@ private fun DateNav(label: String, onPrev: () -> Unit, onNext: () -> Unit, onPic
             Spacer(Modifier.width(8.dp))
             MonoText(label, weight = FontWeight.Bold, size = 14.sp)
         }
-        BrutalIconButton(RawIcons.caretRight, "Next day", onNext, boxSize = 40.dp)
+        BrutalIconButton(RawIcons.caretRight, strings.nextDay, onNext, boxSize = 40.dp)
     }
 }
 
@@ -353,14 +361,14 @@ private fun MacroHeader(
 ) {
     val ink = RawColors.ink
     Column {
-        MonoText("KCAL", weight = FontWeight.Bold, size = 11.sp)
+        MonoText(strings.kcal, weight = FontWeight.Bold, size = 11.sp)
         EditorialHeroNumber(text = calories.first.toString())
         MonoText("/ ${calories.second}", color = ink.copy(alpha = 0.68f), size = 12.sp)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            MacroPill("P", protein, Modifier.weight(1f))
-            MacroPill("C", carbs, Modifier.weight(1f))
-            MacroPill("F", fat, Modifier.weight(1f))
+            MacroPill(strings.proteinShort, protein, Modifier.weight(1f))
+            MacroPill(strings.carbsShort, carbs, Modifier.weight(1f))
+            MacroPill(strings.fatShort, fat, Modifier.weight(1f))
         }
     }
 }
@@ -402,12 +410,12 @@ private fun MealRow(meal: Meal, onEdit: () -> Unit, onDelete: () -> Unit, onTime
         Column(Modifier.weight(1f).clickable(onClick = onEdit)) {
             MonoText(meal.foodName, weight = FontWeight.Medium, size = 14.sp)
             MonoText(
-                "${meal.calories}kcal  P${meal.proteinG} C${meal.carbsG} F${meal.fatG}",
+                strings.mealMacros(meal.calories, meal.proteinG, meal.carbsG, meal.fatG),
                 color = ink.copy(alpha = 0.75f),
                 size = 12.sp
             )
         }
-        BrutalIconButton(RawIcons.delete, "Delete", onDelete, boxSize = 32.dp)
+        BrutalIconButton(RawIcons.delete, strings.delete, onDelete, boxSize = 32.dp)
     }
 }
 
@@ -425,8 +433,8 @@ private fun WaterRow(water: WaterLog, onDelete: () -> Unit, onTimeChange: (Long)
             tint = ink, modifier = Modifier.size(18.dp)
         )
         Spacer(Modifier.width(8.dp))
-        MonoText("${water.milliliters} ml water", weight = FontWeight.Medium, size = 14.sp, modifier = Modifier.weight(1f))
-        BrutalIconButton(RawIcons.delete, "Delete", onDelete, boxSize = 32.dp)
+        MonoText(strings.waterLogged(water.milliliters).removePrefix("+"), weight = FontWeight.Medium, size = 14.sp, modifier = Modifier.weight(1f))
+        BrutalIconButton(RawIcons.delete, strings.delete, onDelete, boxSize = 32.dp)
     }
 }
 
@@ -459,12 +467,12 @@ private fun InputBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         val composerHeight = 52.dp
-        BrutalIconButton(RawIcons.camera, "Camera", onCamera, boxSize = composerHeight)
-        BrutalIconButton(RawIcons.gallery, "Pick photo", onGallery, boxSize = composerHeight)
+        BrutalIconButton(RawIcons.camera, strings.camera, onCamera, boxSize = composerHeight)
+        BrutalIconButton(RawIcons.gallery, strings.pickPhoto, onGallery, boxSize = composerHeight)
         BrutalTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = "food...",
+            placeholder = strings.foodPlaceholder,
             modifier = Modifier.weight(1f).height(composerHeight),
             imeAction = ImeAction.Send,
             onImeAction = { if (!isParsing) onSend() },
@@ -472,7 +480,7 @@ private fun InputBar(
         )
         BrutalIconButton(
             icon = RawIcons.send,
-            contentDescription = "Send",
+            contentDescription = strings.send,
             onClick = { if (!isParsing) onSend() },
             filled = true,
             boxSize = composerHeight

@@ -9,6 +9,7 @@ import com.rawtracker.data.MacroTotals
 import com.rawtracker.data.Meal
 import com.rawtracker.data.ParsedFood
 import com.rawtracker.data.WidgetPrefs
+import com.rawtracker.i18n.strings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -158,9 +159,9 @@ class RawTrackerController(
             it.copy(
                 healthConnected = granted,
                 message = when {
-                    !granted -> "Health unavailable or permission was denied."
-                    syncResult?.synced == true -> "Health connected and synced."
-                    else -> syncResult.healthMessage("Health connected, but sync needs attention.")
+                    !granted -> strings.healthUnavailableOrDenied
+                    syncResult?.synced == true -> strings.healthConnectedAndSynced
+                    else -> syncResult.healthMessage(strings.healthConnectedNeedsAttention)
                 }
             )
         }
@@ -175,14 +176,14 @@ class RawTrackerController(
     fun resyncHealthToday() = scope.launch {
         val result = runCatching { repo.reconcileHealthToday() }
             .getOrElse { HealthSyncResult.failed() }
-        _ui.update { it.copy(message = result.healthMessage("Re-synced today to Health.")) }
+        _ui.update { it.copy(message = result.healthMessage(strings.resyncedToday)) }
     }
 
     /** Rewrites every day present in the local DB into Health Connect (full heal). */
     fun resyncHealthAll() = scope.launch {
         val result = runCatching { repo.reconcileHealthAll() }
             .getOrElse { HealthSyncResult.failed() }
-        _ui.update { it.copy(message = result.healthMessage("Re-synced all days to Health.")) }
+        _ui.update { it.copy(message = result.healthMessage(strings.resyncedAll)) }
     }
 
     fun openSettings() = _ui.update { it.copy(screen = Screen.Settings) }
@@ -240,7 +241,7 @@ class RawTrackerController(
                 repo.enqueuePending(text, path)
                 refreshPendingCount()
                 _ui.update {
-                    it.copy(input = "", attachedImage = null, message = "Offline. Queued for later.")
+                    it.copy(input = "", attachedImage = null, message = strings.offlineQueued)
                 }
             }
             return
@@ -266,7 +267,7 @@ class RawTrackerController(
                 },
                 onFailure = { err ->
                     _ui.update {
-                        it.copy(isParsing = false, message = err.message ?: "Parse failed")
+                        it.copy(isParsing = false, message = err.message ?: strings.parseFailed)
                     }
                 }
             )
@@ -277,7 +278,7 @@ class RawTrackerController(
     fun cancelParse() {
         parseJob?.cancel()
         parseJob = null
-        _ui.update { it.copy(isParsing = false, message = "Cancelled.") }
+        _ui.update { it.copy(isParsing = false, message = strings.cancelled) }
     }
 
     fun confirmSave(edited: ParsedFood, timestamp: Long) {
@@ -291,7 +292,7 @@ class RawTrackerController(
                     draft = null,
                     draftImagePath = null,
                     editingMealId = null,
-                    message = if (editingId != null) "Updated." else "Logged."
+                    message = if (editingId != null) strings.updated else strings.logged
                 )
             }
             container.onDataChanged()
@@ -311,7 +312,7 @@ class RawTrackerController(
     fun logWaterAt(ml: Int, epochMs: Long) = scope.launch {
         if (ml <= 0) return@launch
         repo.logWater(ml, epochMs)
-        _ui.update { it.copy(message = "+$ml ml water", showWaterSheet = false) }
+        _ui.update { it.copy(message = strings.waterLogged(ml), showWaterSheet = false) }
         container.onDataChanged()
     }
 
@@ -348,13 +349,13 @@ class RawTrackerController(
     fun saveApiKey(key: String) = scope.launch {
         repo.saveApiKey(key)
         _ui.update {
-            it.copy(message = if (key.isBlank()) "Cleared \u2014 using built-in key." else "API key saved.")
+            it.copy(message = if (key.isBlank()) strings.clearedBuiltInKey else strings.apiKeySaved)
         }
     }
 
     fun exportCsv() = scope.launch {
         val path = runCatching { repo.exportCsv() }.getOrNull()
-        _ui.update { it.copy(message = path?.let { p -> "Exported: $p" } ?: "Export failed") }
+        _ui.update { it.copy(message = path?.let { p -> strings.exported(p) } ?: strings.exportFailed) }
     }
 
     fun retryPending() {
@@ -384,8 +385,8 @@ class RawTrackerController(
 
 private fun HealthSyncResult?.healthMessage(success: String): String = when (this?.status) {
     HealthSyncStatus.Synced -> success
-    HealthSyncStatus.MissingPermissions -> "Connect Health first, then try again."
-    HealthSyncStatus.Unavailable -> "Health Connect is unavailable on this device."
-    HealthSyncStatus.Failed -> "Health sync failed. Try Re-sync in Settings, then check Health permissions."
-    null -> "Health sync failed. Try Re-sync in Settings, then check Health permissions."
+    HealthSyncStatus.MissingPermissions -> strings.connectHealthFirst
+    HealthSyncStatus.Unavailable -> strings.healthUnavailable
+    HealthSyncStatus.Failed -> strings.healthSyncFailed
+    null -> strings.healthSyncFailed
 }

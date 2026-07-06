@@ -42,6 +42,7 @@ import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.RawIcons
 import com.rawtracker.design.inkBorder
+import com.rawtracker.i18n.strings
 
 private fun Color.toArgbLong(): Long = 0xFF000000L or (toArgb().toLong() and 0xFFFFFFL)
 
@@ -80,23 +81,23 @@ fun SettingsScreen(controller: RawTrackerController) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MonoText("SETTINGS", weight = FontWeight.Bold, size = 16.sp)
-            BrutalIconButton(RawIcons.close, "Back", { controller.openInput() }, boxSize = 40.dp)
+            MonoText(strings.settingsTitle, weight = FontWeight.Bold, size = 16.sp)
+            BrutalIconButton(RawIcons.close, strings.back, { controller.openInput() }, boxSize = 40.dp)
         }
 
-        EditorialSectionLabel("DAILY TARGETS")
+        EditorialSectionLabel(strings.dailyTargets)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LabeledNumber("CALORIES", cal, { cal = it }, Modifier.weight(1f))
-            LabeledNumber("PROTEIN", protein, { protein = it }, Modifier.weight(1f))
+            LabeledNumber(strings.calories, cal, { cal = it }, Modifier.weight(1f))
+            LabeledNumber(strings.protein, protein, { protein = it }, Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LabeledNumber("CARBS", carbs, { carbs = it }, Modifier.weight(1f))
-            LabeledNumber("FAT", fat, { fat = it }, Modifier.weight(1f))
+            LabeledNumber(strings.carbs, carbs, { carbs = it }, Modifier.weight(1f))
+            LabeledNumber(strings.fat, fat, { fat = it }, Modifier.weight(1f))
         }
         Spacer(Modifier.height(12.dp))
         BrutalButton(
-            "Save targets",
+            strings.saveTargets,
             {
                 controller.saveGoals(
                     Goals(
@@ -111,7 +112,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
 
         Spacer(Modifier.height(24.dp))
-        EditorialSectionLabel("DUOTONE")
+        EditorialSectionLabel(strings.duotone)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PRESETS.forEach { s ->
                 val selected = s.canvas == duotone.canvas && s.ink == duotone.ink
@@ -129,7 +130,7 @@ fun SettingsScreen(controller: RawTrackerController) {
         }
 
         Spacer(Modifier.height(20.dp))
-        EditorialSectionLabel("CUSTOM COLOURS")
+        EditorialSectionLabel(strings.customColours)
         var inkColor by remember(duotone.ink) { mutableStateOf(Color(duotone.ink)) }
         var canvasColor by remember(duotone.canvas) { mutableStateOf(Color(duotone.canvas)) }
         Row(
@@ -143,16 +144,16 @@ fun SettingsScreen(controller: RawTrackerController) {
             ) {
                 Box(Modifier.size(18.dp).background(inkColor, RoundedCornerShape(3.dp)))
             }
-            MonoText("live preview", color = ink.copy(alpha = 0.6f), size = 11.sp)
+            MonoText(strings.livePreview, color = ink.copy(alpha = 0.6f), size = 11.sp)
         }
-        MonoText("PRIMARY / INK", weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+        MonoText(strings.primaryInk, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
         HsvColorPicker(inkColor) { inkColor = it }
         Spacer(Modifier.height(14.dp))
-        MonoText("SECONDARY / CANVAS", weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+        MonoText(strings.secondaryCanvas, weight = FontWeight.Bold, size = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
         HsvColorPicker(canvasColor) { canvasColor = it }
         Spacer(Modifier.height(12.dp))
         BrutalButton(
-            "Apply colours",
+            strings.applyColours,
             {
                 controller.saveDuotone(
                     DuotonePrefs(
@@ -165,60 +166,60 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
 
         Spacer(Modifier.height(24.dp))
-        EditorialSectionLabel("WIDGET")
+        EditorialSectionLabel(strings.widget)
         MonoText(
-            "// choose what the home-screen widget can show (size permitting)",
+            strings.widgetHelp,
             color = ink.copy(alpha = 0.6f),
             size = 11.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         val widgetPrefs by controller.widgetPrefs.collectAsState()
-        ToggleRow("Calorie goal", widgetPrefs.showGoal) {
+        ToggleRow(strings.calorieGoal, widgetPrefs.showGoal) {
             controller.saveWidgetPrefs(widgetPrefs.copy(showGoal = it))
         }
-        ToggleRow("Macros (P/C/F)", widgetPrefs.showMacros) {
+        ToggleRow(strings.macrosPcf, widgetPrefs.showMacros) {
             controller.saveWidgetPrefs(widgetPrefs.copy(showMacros = it))
         }
-        ToggleRow("+ Food button", widgetPrefs.showFood) {
+        ToggleRow(strings.foodButton, widgetPrefs.showFood) {
             controller.saveWidgetPrefs(widgetPrefs.copy(showFood = it))
         }
-        ToggleRow("+ Water button", widgetPrefs.showWater) {
+        ToggleRow(strings.waterButton, widgetPrefs.showWater) {
             controller.saveWidgetPrefs(widgetPrefs.copy(showWater = it))
         }
 
         Spacer(Modifier.height(24.dp))
-        EditorialSectionLabel("HEALTH SYNC")
+        EditorialSectionLabel(strings.healthSync)
         val ui by controller.ui.collectAsState()
         MonoText(
-            if (ui.healthConnected) "// connected \u2014 meals + water mirror to health"
-            else "// write-only: calories, macros, water",
+            if (ui.healthConnected) strings.healthConnectedHelp
+            else strings.healthWriteOnlyHelp,
             color = ink.copy(alpha = 0.6f),
             size = 11.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         BrutalButton(
-            if (ui.healthConnected) "Health connected" else "Connect Health",
+            if (ui.healthConnected) strings.healthConnected else strings.connectHealth,
             { controller.connectHealth() },
             Modifier.fillMaxWidth(),
             filled = ui.healthConnected
         )
         Spacer(Modifier.height(8.dp))
         MonoText(
-            "// re-sync rewrites Health from this app's data (fixes drift from old edits/deletes)",
+            strings.healthResyncHelp,
             color = ink.copy(alpha = 0.6f),
             size = 11.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BrutalButton("Re-sync today", { controller.resyncHealthToday() }, Modifier.weight(1f), filled = false)
-            BrutalButton("Re-sync all", { controller.resyncHealthAll() }, Modifier.weight(1f), filled = false)
+            BrutalButton(strings.resyncToday, { controller.resyncHealthToday() }, Modifier.weight(1f), filled = false)
+            BrutalButton(strings.resyncAll, { controller.resyncHealthAll() }, Modifier.weight(1f), filled = false)
         }
 
         Spacer(Modifier.height(24.dp))
-        EditorialSectionLabel("GEMINI API KEY")
+        EditorialSectionLabel(strings.geminiApiKey)
         MonoText(
-            if (apiKey.isBlank()) "// using built-in key \u2014 paste your own to use your quota"
-            else "// custom key active (\u2022\u2022\u2022\u2022${apiKey.takeLast(4)})",
+            if (apiKey.isBlank()) strings.builtInKeyHelp
+            else strings.customKeyActive(apiKey.takeLast(4)),
             color = ink.copy(alpha = 0.6f),
             size = 11.sp,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -232,28 +233,28 @@ fun SettingsScreen(controller: RawTrackerController) {
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BrutalButton("Save key", { controller.saveApiKey(keyInput) }, Modifier.weight(1f))
+            BrutalButton(strings.saveKey, { controller.saveApiKey(keyInput) }, Modifier.weight(1f))
             BrutalButton(
-                "Clear",
+                strings.clear,
                 { keyInput = ""; controller.saveApiKey("") },
                 Modifier.weight(1f),
                 filled = false
             )
         }
         MonoText(
-            "// get a free key at aistudio.google.com/app/apikey",
+            strings.getFreeKeyHelp,
             color = ink.copy(alpha = 0.6f),
             size = 11.sp,
             modifier = Modifier.padding(top = 8.dp)
         )
 
         Spacer(Modifier.height(24.dp))
-        EditorialSectionLabel("DATA")
-        BrutalButton("Export CSV", { controller.exportCsv() }, Modifier.fillMaxWidth(), filled = false)
+        EditorialSectionLabel(strings.data)
+        BrutalButton(strings.exportCsv, { controller.exportCsv() }, Modifier.fillMaxWidth(), filled = false)
 
         Spacer(Modifier.height(24.dp))
         MonoText(
-            "build ${controller.appVersion}",
+            "${strings.build} ${controller.appVersion}",
             color = ink.copy(alpha = 0.5f),
             size = 11.sp,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)

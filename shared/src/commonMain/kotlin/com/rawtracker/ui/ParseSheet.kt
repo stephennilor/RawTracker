@@ -34,6 +34,7 @@ import com.rawtracker.design.BrutalTextField
 import com.rawtracker.design.MonoText
 import com.rawtracker.design.RawColors
 import com.rawtracker.design.inkBorder
+import com.rawtracker.i18n.strings
 
 @Composable
 fun ParseSheet(controller: RawTrackerController) {
@@ -69,24 +70,24 @@ fun ParseSheet(controller: RawTrackerController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MonoText(if (ui.editingMealId != null) "EDIT ENTRY" else "REVIEW & SAVE", weight = FontWeight.Bold, size = 14.sp)
+                MonoText(if (ui.editingMealId != null) strings.editEntry else strings.reviewAndSave, weight = FontWeight.Bold, size = 14.sp)
                 MonoText(formatDayLabel(controller.selectedDate.collectAsState().value, controller.isViewingToday()), color = ink.copy(alpha = 0.7f), size = 13.sp)
             }
             Spacer(Modifier.height(14.dp))
 
-            MonoText("FOOD", weight = FontWeight.Bold, size = 11.sp)
+            MonoText(strings.food, weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))
             BrutalTextField(name, { name = it }, Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                NumberField("CAL", calories, { calories = it }, Modifier.weight(1f))
-                NumberField("PROTEIN", protein, { protein = it }, Modifier.weight(1f))
+                NumberField(strings.caloriesShort, calories, { calories = it }, Modifier.weight(1f))
+                NumberField(strings.protein, protein, { protein = it }, Modifier.weight(1f))
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                NumberField("CARBS", carbs, { carbs = it }, Modifier.weight(1f))
-                NumberField("FAT", fat, { fat = it }, Modifier.weight(1f))
+                NumberField(strings.carbs, carbs, { carbs = it }, Modifier.weight(1f))
+                NumberField(strings.fat, fat, { fat = it }, Modifier.weight(1f))
             }
             Spacer(Modifier.height(14.dp))
 
@@ -97,7 +98,7 @@ fun ParseSheet(controller: RawTrackerController) {
                         .inkBorder(ink)
                         .padding(10.dp)
                 ) {
-                    MonoText("REALITY CHECK", weight = FontWeight.Bold, size = 11.sp)
+                    MonoText(strings.realityCheck, weight = FontWeight.Bold, size = 11.sp)
                     Spacer(Modifier.height(6.dp))
                     draft.plausibilityWarnings.forEach { warning ->
                         MonoText(warning, color = ink.copy(alpha = 0.76f), size = 12.sp)
@@ -114,36 +115,36 @@ fun ParseSheet(controller: RawTrackerController) {
                         .inkBorder(ink)
                         .padding(10.dp)
                 ) {
-                    MonoText("MODEL BREAKDOWN", weight = FontWeight.Bold, size = 11.sp)
+                    MonoText(strings.modelBreakdown, weight = FontWeight.Bold, size = 11.sp)
                     Spacer(Modifier.height(6.dp))
                     draft.items.take(5).forEach { item ->
                         MonoText(
-                            "${item.name} - ${item.portion_grams}g - ${item.calories}kcal P${item.protein_g} C${item.carbs_g} F${item.fat_g}",
+                            strings.itemBreakdown(item.name, item.portion_grams, item.calories, item.protein_g, item.carbs_g, item.fat_g),
                             color = ink.copy(alpha = 0.76f),
                             size = 12.sp
                         )
                         Spacer(Modifier.height(4.dp))
                     }
                     if (draft.portion_multiplier != 1.0) {
-                        MonoText("x${draft.portion_multiplier} portion multiplier", color = ink.copy(alpha = 0.76f), size = 12.sp)
+                        MonoText("x${draft.portion_multiplier} ${strings.portionMultiplier}", color = ink.copy(alpha = 0.76f), size = 12.sp)
                     }
                 }
                 Spacer(Modifier.height(14.dp))
             }
 
-            MonoText("TIME", weight = FontWeight.Bold, size = 11.sp)
+            MonoText(strings.time, weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))
             TimeField(ts) { ts = it }
             Spacer(Modifier.height(18.dp))
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                BrutalButton("Cancel", { controller.dismissSheet() }, Modifier.weight(1f), filled = false)
+                BrutalButton(strings.cancel, { controller.dismissSheet() }, Modifier.weight(1f), filled = false)
                 BrutalButton(
-                    label = if (ui.editingMealId != null) "Update" else "Save",
+                    label = if (ui.editingMealId != null) strings.update else strings.save,
                     onClick = {
                         controller.confirmSave(
                             ParsedFood(
-                                food_name = name.ifBlank { "Food" },
+                                food_name = name.ifBlank { strings.fallbackFoodName },
                                 calories = calories.toIntOrNull() ?: 0,
                                 protein_g = protein.toIntOrNull() ?: 0,
                                 carbs_g = carbs.toIntOrNull() ?: 0,

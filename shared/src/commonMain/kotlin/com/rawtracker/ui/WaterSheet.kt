@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -62,6 +64,8 @@ fun WaterSheet(controller: RawTrackerController) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
+                .navigationBarsPadding()
                 .background(canvas, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
                 .clickable(enabled = false) {}
                 .padding(20.dp)
@@ -92,25 +96,24 @@ fun WaterSheet(controller: RawTrackerController) {
             }
             Spacer(Modifier.height(16.dp))
 
+            MonoText(strings.customMl, weight = FontWeight.Bold, size = 11.sp)
+            Spacer(Modifier.height(4.dp))
+            BrutalTextField(
+                value = custom,
+                onValueChange = { custom = it.filter { c -> c.isDigit() }.take(5) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = strings.exampleWaterAmount,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done,
+                onImeAction = addCustom
+            )
+            Spacer(Modifier.height(10.dp))
+            BrutalButton(strings.add, addCustom, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(16.dp))
+
             MonoText(strings.time, weight = FontWeight.Bold, size = 11.sp)
             Spacer(Modifier.height(4.dp))
             TimeField(ts) { ts = it }
-            Spacer(Modifier.height(16.dp))
-
-            MonoText(strings.customMl, weight = FontWeight.Bold, size = 11.sp)
-            Spacer(Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                BrutalTextField(
-                    value = custom,
-                    onValueChange = { custom = it.filter { c -> c.isDigit() }.take(5) },
-                    modifier = Modifier.weight(1f),
-                    placeholder = strings.exampleWaterAmount,
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done,
-                    onImeAction = addCustom
-                )
-                BrutalButton(strings.add, addCustom, Modifier.weight(1f))
-            }
             Spacer(Modifier.height(8.dp))
         }
     }

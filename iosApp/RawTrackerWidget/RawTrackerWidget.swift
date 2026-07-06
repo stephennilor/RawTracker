@@ -28,7 +28,7 @@ private var widgetText: WidgetText {
             protein: "B",
             carbs: "W",
             fat: "T",
-            food: "JEDZ",
+            food: "JEDZENIE",
             water: "H\u{2082}O",
             progressName: "Dzisiejsze makro",
             progressDescription: "Kalorie, białko, węgle, tłuszcz + szybki zapis.",

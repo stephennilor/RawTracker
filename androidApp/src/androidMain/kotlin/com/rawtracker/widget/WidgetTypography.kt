@@ -208,7 +208,8 @@ private fun drawStretchedText(
     paint.strokeJoin = Paint.Join.ROUND
 
     val naturalWidth = paint.measureText(text).coerceAtLeast(1f)
-    val scaleX = (rect.width() / naturalWidth).coerceIn(minScaleX, maxScaleX)
+    val fitScaleX = rect.width() / naturalWidth
+    val scaleX = if (fitScaleX < minScaleX) fitScaleX else fitScaleX.coerceIn(minScaleX, maxScaleX)
     val scaledWidth = naturalWidth * scaleX
     val baseY = rect.top + (rect.height() - bounds.height()) / 2f - bounds.top
     val startX = rect.left + (rect.width() - scaledWidth) / 2f
@@ -488,16 +489,18 @@ internal fun renderActionSticker(
         } else {
             Typeface.create(base, Typeface.BOLD)
         }
+        val textPadX = (minOf(w, h) * 0.045f).coerceIn(3f, 12f)
+        val textPadY = (minOf(w, h) * 0.032f).coerceIn(2f, 8f)
         drawStretchedText(
             canvas = canvas,
             text = label,
-            rect = RectF(pad, pad * 0.6f, w - pad, h - pad * 0.6f),
+            rect = RectF(textPadX, textPadY, w - textPadX, h - textPadY),
             typeface = typeface,
             variationSettings = "'wght' 800",
             color = canvasColor,
-            heightRatio = 0.82f,
+            heightRatio = 0.9f,
             minScaleX = 0.42f,
-            maxScaleX = 1.42f,
+            maxScaleX = 1.72f,
             fakeBold = true,
             strokeRatio = 0.012f,
         )

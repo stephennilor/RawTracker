@@ -219,6 +219,17 @@ class MealRepository(
             )
         }
 
+    suspend fun widgetPrefsOnce(): WidgetPrefs = withContext(Dispatchers.Default) {
+        val goals = q.allGoals().executeAsList().associate { it.key to it.value_ }
+        fun flag(key: String) = goals[key]?.toBooleanStrictOrNull() ?: true
+        WidgetPrefs(
+            showMacros = flag("w_show_macros"),
+            showGoal = flag("w_show_goal"),
+            showWater = flag("w_show_water"),
+            showFood = flag("w_show_food")
+        )
+    }
+
     suspend fun saveWidgetPrefs(prefs: WidgetPrefs) = withContext(Dispatchers.Default) {
         q.transaction {
             q.upsertGoal("w_show_macros", prefs.showMacros.toString())

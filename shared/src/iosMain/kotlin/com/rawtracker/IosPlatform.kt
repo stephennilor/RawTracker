@@ -206,6 +206,7 @@ private fun writeWidgetData(container: AppContainer) {
     GlobalScope.launch {
         val totals = container.repository.todayTotalsOnce()
         val goals = container.repository.goalsOnce()
+        val widgetPrefs = container.repository.widgetPrefsOnce()
         val defaults = NSUserDefaults(suiteName = RAWTRACKER_APP_GROUP)
         defaults.setInteger(totals.calories.toLong(), forKey = "cal")
         defaults.setInteger(totals.protein.toLong(), forKey = "protein")
@@ -215,6 +216,10 @@ private fun writeWidgetData(container: AppContainer) {
         defaults.setInteger(goals.protein.toLong(), forKey = "goalProtein")
         defaults.setInteger(goals.carbs.toLong(), forKey = "goalCarbs")
         defaults.setInteger(goals.fat.toLong(), forKey = "goalFat")
+        defaults.setBool(widgetPrefs.showMacros, forKey = "showMacros")
+        defaults.setBool(widgetPrefs.showGoal, forKey = "showGoal")
+        defaults.setBool(widgetPrefs.showWater, forKey = "showWater")
+        defaults.setBool(widgetPrefs.showFood, forKey = "showFood")
         defaults.synchronize()
     }
 }

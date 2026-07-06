@@ -155,6 +155,8 @@ internal fun renderStretchedText(
         typeface = font.typeface(context),
         color = color,
         heightRatio = if (font == WidgetFont.Display) 0.9f else 0.78f,
+        minScaleX = if (font == WidgetFont.Display) 0.14f else 0.65f,
+        maxScaleX = if (font == WidgetFont.Display) 1.65f else 1.18f,
         ghost = font == WidgetFont.Display,
     )
     applySoilpunkFinish(bitmap, color)
@@ -289,7 +291,8 @@ private fun drawMacroCell(
         typeface = mono,
         color = inkDim,
         heightRatio = 0.74f,
-        minScaleX = 0.2f
+        minScaleX = 0.65f,
+        maxScaleX = 1.0f
     )
     drawStretchedText(
         canvas = canvas,
@@ -298,7 +301,8 @@ private fun drawMacroCell(
         typeface = display,
         color = ink,
         heightRatio = 0.9f,
-        minScaleX = 0.2f,
+        minScaleX = 0.14f,
+        maxScaleX = 1.45f,
         ghost = true,
     )
 }

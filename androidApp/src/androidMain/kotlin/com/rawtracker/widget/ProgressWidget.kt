@@ -167,10 +167,15 @@ private fun Layout1x2(context: Context, w: Float, h: Float, data: WidgetTotals, 
 
 @androidx.compose.runtime.Composable
 private fun Layout2x2(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
+    val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
+    if (actionCells == 0) {
+        HeroAndMacrosTile(context, tileWidthDp(w, 1, 0), tileHeightDp(h, 1, 0), data, palette, openIntent, GlanceModifier.fillMaxSize())
+        return
+    }
+
     val cellW = tileWidthDp(w, 1, 0)
     val cellH = tileHeightDp(h, 2, 1)
-    val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
-    val actionW = tileWidthDp(w, actionCells.coerceAtLeast(1), (actionCells - 1).coerceAtLeast(0))
+    val actionW = tileWidthDp(w, actionCells, actionCells - 1)
     val actionH = tileHeightDp(h, 2, 1)
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
@@ -189,10 +194,12 @@ private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotal
     val topCells = if (data.showMacros) 4 else 1
     val topGaps = (topCells - 1).coerceAtLeast(0)
     val topCellW = tileWidthDp(w, topCells, topGaps)
-    val topCellH = tileHeightDp(h, 2, 1)
     val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
+    val rowCount = 1 + if (actionCells > 0) 1 else 0
+    val rowGaps = (rowCount - 1).coerceAtLeast(0)
+    val topCellH = tileHeightDp(h, rowCount, rowGaps)
     val actionW = tileWidthDp(w, actionCells.coerceAtLeast(1), (actionCells - 1).coerceAtLeast(0))
-    val actionH = tileHeightDp(h, 2, 1)
+    val actionH = tileHeightDp(h, rowCount, rowGaps)
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
@@ -206,11 +213,13 @@ private fun LayoutWidex2(context: Context, w: Float, h: Float, data: WidgetTotal
                 MacroTile(context, "F", data.fat, topCellW, topCellH, palette, openIntent, GlanceModifier.defaultWeight().fillMaxHeight())
             }
         }
-        Spacer(GlanceModifier.height(Gap))
-        Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-            if (data.showFood) ActionTile(context, actionW, actionH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
-            if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
-            if (data.showWater) ActionTile(context, actionW, actionH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+        if (actionCells > 0) {
+            Spacer(GlanceModifier.height(Gap))
+            Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
+                if (data.showFood) ActionTile(context, actionW, actionH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
+                if (data.showWater) ActionTile(context, actionW, actionH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            }
         }
     }
 }
@@ -244,8 +253,11 @@ private fun Layout1x3Plus(context: Context, w: Float, h: Float, data: WidgetTota
 @androidx.compose.runtime.Composable
 private fun LayoutWidex3Plus(context: Context, w: Float, h: Float, data: WidgetTotals, palette: WidgetPalette, addIntent: Intent, waterIntent: Intent, openIntent: Intent) {
     val cellW = tileWidthDp(w, 1, 0)
-    val rowH = tileHeightDp(h, 3, 2)
     val actionCells = (if (data.showFood) 1 else 0) + (if (data.showWater) 1 else 0)
+    val macroRow = if (data.showMacros) 1 else 0
+    val actionRow = if (actionCells > 0) 1 else 0
+    val rows = 1 + macroRow + actionRow
+    val rowH = tileHeightDp(h, rows, (rows - 1).coerceAtLeast(0))
     val actionW = tileWidthDp(w, actionCells.coerceAtLeast(1), (actionCells - 1).coerceAtLeast(0))
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
@@ -254,11 +266,13 @@ private fun LayoutWidex3Plus(context: Context, w: Float, h: Float, data: WidgetT
             Spacer(GlanceModifier.height(Gap))
             MacroRow(context, w, rowH, data, palette, openIntent, GlanceModifier.defaultWeight().fillMaxWidth())
         }
-        Spacer(GlanceModifier.height(Gap))
-        Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-            if (data.showFood) ActionTile(context, actionW, rowH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
-            if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
-            if (data.showWater) ActionTile(context, actionW, rowH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+        if (actionCells > 0) {
+            Spacer(GlanceModifier.height(Gap))
+            Row(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
+                if (data.showFood) ActionTile(context, actionW, rowH, water = false, palette, addIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+                if (data.showFood && data.showWater) Spacer(GlanceModifier.width(Gap))
+                if (data.showWater) ActionTile(context, actionW, rowH, water = true, palette, waterIntent, GlanceModifier.defaultWeight().fillMaxHeight())
+            }
         }
     }
 }
@@ -297,8 +311,10 @@ private fun HeroAndMacrosTile(
 ) {
     val innerW = width - BorderWidth * 2
     val innerH = height - BorderWidth * 2
-    val calH = if (data.showMacros) innerH.fraction(0.62f) else innerH.fraction(0.72f)
-    val tailH = innerH - calH
+    val goalH = if (data.showGoal) innerH.fraction(if (data.showMacros) 0.16f else 0.28f) else 0.dp
+    val macroH = if (data.showMacros) innerH.fraction(if (data.showGoal) 0.30f else 0.38f) else 0.dp
+    val labelH = if (!data.showGoal && !data.showMacros) innerH.fraction(0.28f) else 0.dp
+    val calH = innerH - goalH - macroH - labelH
 
     GridTile(palette, modifier, inverted = false, intent = intent) {
         Column(modifier = GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -311,6 +327,17 @@ private fun HeroAndMacrosTile(
                 font = WidgetFont.Display,
                 modifier = GlanceModifier.fillMaxWidth().height(calH),
             )
+            if (data.showGoal) {
+                StretchedTextImage(
+                    context = context,
+                    text = "/ ${data.goalCal}",
+                    color = Color(palette.inkArgb).copy(alpha = 0.68f),
+                    width = innerW,
+                    height = goalH,
+                    font = WidgetFont.Mono,
+                    modifier = GlanceModifier.fillMaxWidth().height(goalH),
+                )
+            }
             if (data.showMacros) {
                 MacroStripImage(
                     context = context,
@@ -318,18 +345,18 @@ private fun HeroAndMacrosTile(
                     ink = Color(palette.inkArgb),
                     inkDim = Color(palette.inkArgb).copy(alpha = 0.68f),
                     width = innerW,
-                    height = tailH,
-                    modifier = GlanceModifier.fillMaxWidth().height(tailH),
+                    height = macroH,
+                    modifier = GlanceModifier.fillMaxWidth().height(macroH),
                 )
-            } else {
+            } else if (!data.showGoal) {
                 StretchedTextImage(
                     context = context,
                     text = "KCAL",
                     color = Color(palette.inkArgb).copy(alpha = 0.68f),
                     width = innerW,
-                    height = tailH,
+                    height = labelH,
                     font = WidgetFont.Mono,
-                    modifier = GlanceModifier.fillMaxWidth().height(tailH),
+                    modifier = GlanceModifier.fillMaxWidth().height(labelH),
                 )
             }
         }
@@ -348,7 +375,7 @@ private fun HeroTile(
 ) {
     val innerW = width - BorderWidth * 2
     val innerH = height - BorderWidth * 2
-    val calH = innerH.fraction(0.72f)
+    val calH = innerH.fraction(if (data.showGoal) 0.68f else 0.72f)
     val labelH = innerH - calH
 
     GridTile(palette, modifier, inverted = false, intent = intent) {
@@ -364,7 +391,7 @@ private fun HeroTile(
             )
             StretchedTextImage(
                 context = context,
-                text = "KCAL",
+                text = if (data.showGoal) "/ ${data.goalCal}" else "KCAL",
                 color = Color(palette.inkArgb).copy(alpha = 0.68f),
                 width = innerW,
                 height = labelH,

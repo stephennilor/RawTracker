@@ -4,6 +4,9 @@ import SwiftUI
 private let appGroup = "group.com.rawtracker.app"
 private let canvas = Color(red: 1.0, green: 0.914, blue: 0.808)   // 0xFFFFE9CE
 private let ink = Color(red: 0.541, green: 0.325, blue: 1.0)      // 0xFF8A53FF
+private func displayFont(_ size: CGFloat) -> Font { .custom("Fredoka-Bold", size: size) }
+private func monoFont(_ size: CGFloat) -> Font { .custom("JetBrainsMonoRoman-Bold", size: size) }
+private func monoRegularFont(_ size: CGFloat) -> Font { .custom("JetBrainsMonoRoman-Regular", size: size) }
 
 struct MacroEntry: TimelineEntry {
     let date: Date
@@ -12,11 +15,15 @@ struct MacroEntry: TimelineEntry {
     let carbs: Int
     let fat: Int
     let goalCal: Int
+    let showMacros: Bool
+    let showGoal: Bool
+    let showWater: Bool
+    let showFood: Bool
 }
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> MacroEntry {
-        MacroEntry(date: Date(), cal: 0, protein: 0, carbs: 0, fat: 0, goalCal: 2500)
+        MacroEntry(date: Date(), cal: 0, protein: 0, carbs: 0, fat: 0, goalCal: 2500, showMacros: true, showGoal: true, showWater: true, showFood: true)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (MacroEntry) -> Void) {
@@ -31,13 +38,21 @@ struct Provider: TimelineProvider {
     private func loadEntry() -> MacroEntry {
         let d = UserDefaults(suiteName: appGroup)
         let goal = d?.integer(forKey: "goalCal") ?? 0
+        func flag(_ key: String) -> Bool {
+            guard let defaults = d, defaults.object(forKey: key) != nil else { return true }
+            return defaults.bool(forKey: key)
+        }
         return MacroEntry(
             date: Date(),
             cal: d?.integer(forKey: "cal") ?? 0,
             protein: d?.integer(forKey: "protein") ?? 0,
             carbs: d?.integer(forKey: "carbs") ?? 0,
             fat: d?.integer(forKey: "fat") ?? 0,
-            goalCal: goal == 0 ? 2500 : goal
+            goalCal: goal == 0 ? 2500 : goal,
+            showMacros: flag("showMacros"),
+            showGoal: flag("showGoal"),
+            showWater: flag("showWater"),
+            showFood: flag("showFood")
         )
     }
 }
@@ -48,34 +63,44 @@ struct ProgressWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("TODAY")
-                .font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundColor(ink)
+                .font(monoFont(12)).foregroundColor(ink)
             Text("\(entry.cal)")
-                .font(.system(size: 30, weight: .heavy, design: .monospaced)).foregroundColor(ink)
-            Text("/ \(entry.goalCal) kcal")
-                .font(.system(size: 11, design: .monospaced)).foregroundColor(ink.opacity(0.6))
-            HStack(spacing: 10) {
-                Text("P\(entry.protein)").macro()
-                Text("C\(entry.carbs)").macro()
-                Text("F\(entry.fat)").macro()
+                .font(displayFont(34)).foregroundColor(ink)
+            if entry.showGoal {
+                Text("/ \(entry.goalCal) kcal")
+                    .font(monoRegularFont(11)).foregroundColor(ink.opacity(0.6))
+            }
+            if entry.showMacros {
+                HStack(spacing: 10) {
+                    Text("P\(entry.protein)").macro()
+                    Text("C\(entry.carbs)").macro()
+                    Text("F\(entry.fat)").macro()
+                }
             }
             Spacer(minLength: 4)
-            HStack(spacing: 8) {
-                Link(destination: URL(string: "rawtracker://capture")!) {
-                    Text("+ FOOD")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(canvas)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(ink)
-                        .cornerRadius(6)
-                }
-                Link(destination: URL(string: "rawtracker://water")!) {
-                    Text("+ H\u{2082}O")  // subscript two, matching the Android widget
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(ink)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(ink, lineWidth: 2))
+            if entry.showFood || entry.showWater {
+                HStack(spacing: 8) {
+                    if entry.showFood {
+                        Link(destination: URL(string: "rawtracker://capture")!) {
+                            Text("+ FOOD")
+                                .font(monoFont(12))
+                                .foregroundColor(canvas)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(ink)
+                                .cornerRadius(6)
+                        }
+                    }
+                    if entry.showWater {
+                        Link(destination: URL(string: "rawtracker://water")!) {
+                            Text("+ H\u{2082}O")  // subscript two, matching the Android widget
+                                .font(monoFont(12))
+                                .foregroundColor(ink)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(ink, lineWidth: 2))
+                        }
+                    }
                 }
             }
         }
@@ -84,7 +109,7 @@ struct ProgressWidgetView: View {
 
 private extension Text {
     func macro() -> some View {
-        self.font(.system(size: 14, weight: .bold, design: .monospaced)).foregroundColor(ink)
+        self.font(monoFont(14)).foregroundColor(ink)
     }
 }
 
